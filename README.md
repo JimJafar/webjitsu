@@ -22,6 +22,16 @@ Click, fill forms, read pages, and keep a browser session across calls. Five MCP
   <strong><a href="#sponsors">Sponsor</a></strong>
 </p>
 
+> **This repository is a fork.** The real-browser lane (`bladebro rb`: driving
+> your own Chromium, enumerating its profiles, cloning its cookies and logins, or
+> attaching to a running browser) is **removed** here, along with self-update, so
+> an update cannot quietly restore it. Everything else — the agent browser, the
+> five tools, stealth, site adapters — is upstream's.
+> **[FORK.md](FORK.md)** lists every gate, how to build, and how to pull from
+> upstream. `npm install -g bladebro` installs **upstream's** build, lane
+> included: build this tree (`cargo build --release`, or `scripts/fork-install.sh`)
+> and point your MCP client at that binary.
+
 ## Quickstart
 
 Install Chrome or Chromium on the machine running Bladebro. Then open and read a page from the terminal.
