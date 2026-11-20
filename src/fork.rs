@@ -32,9 +32,7 @@ pub const FORK_TAG: &str = "no-rb";
 /// hunting for a config key that does not exist.
 pub fn blocked(what: &str) -> BladeError {
     BladeError::Other(format!(
-        "blocked: {what} is removed in this bladebro build (fork `{FORK_TAG}`, see FORK.md). \
-         The agent browser is the only lane: it uses a dedicated profile under the blade data \
-         dir and never reads a real browser profile."
+        "blocked: {what} is removed in this bladebro build (fork `{FORK_TAG}`, see FORK.md)."
     ))
 }
 

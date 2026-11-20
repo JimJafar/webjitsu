@@ -52,7 +52,13 @@ fn fork_refuse(sub: &str, json_mode: bool) -> Result<()> {
         }
         return Ok(());
     }
-    Err(crate::fork::blocked(&format!("`bladebro rb {sub}`")))
+    // The rb refusal carries the reassurance too: the reader is usually here
+    // because they wanted their own browser, so say what this build uses instead.
+    Err(crate::error::BladeError::Other(format!(
+        "{} The agent browser is the only lane: it uses a dedicated profile under the blade \
+         data dir and never reads a real browser profile.",
+        crate::fork::blocked(&format!("`bladebro rb {sub}`"))
+    )))
 }
 
 /// `rb refresh` / `rb forget` must not run under a live clone session (an
