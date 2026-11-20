@@ -94,6 +94,19 @@ cargo test --profile gate
 ```
 
 A merge conflict in any of the seven gate sites above is the signal to look at.
+
+On a host without Xvfb, `cargo test --profile gate` fails five of upstream's
+`sigint_*` tests in `tests/launch_failure_cleanup.rs` (timing-sensitive
+signal-during-launch assertions) while passing them in isolation:
+
+```sh
+cargo test --profile gate --test launch_failure_cleanup   # 10 passed
+```
+
+**This is upstream's behaviour, not the fork's** — verified by running upstream
+`v4.8.2` (`bfdb5c3`) unmodified in a worktree on the same machine: the same five
+tests fail in a full run and pass in isolation. Run the file on its own when a
+full run turns red there.
 The tests in `tests/rb_clone.rs` and `tests/rb_discovery.rs` are marked
 `#[ignore]` here (they drive the removed lane) — they are kept so upstream's
 coverage survives the rebase, and they will compile against a future re-enable.
