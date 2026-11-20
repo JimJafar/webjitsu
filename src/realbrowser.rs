@@ -107,7 +107,17 @@ pub fn init_lane() {
 /// Effective lane: the `BLADE_LANE=real|agent` env override wins, else the
 /// persisted config. Pure — the decision is unit-testable, and every reader
 /// of the lane (init, refresh, fingerprint) goes through it.
+///
+/// FORK (`fork::REAL_BROWSER_DISABLED`, see FORK.md): this build removes the
+/// real-browser lane, so the decision is always the agent lane. Every reader
+/// funnels through this one function — `init_lane`, `refresh_lane`, the launch
+/// fingerprint and the daemon's serving lane — so neither a persisted
+/// `realbrowser.json` carrying `enabled: true` (left over from an upstream
+/// install) nor `BLADE_LANE=real` can put the agent in a real browser.
 pub fn lane_from(env_override: Option<&str>, cfg_enabled: bool) -> bool {
+    if crate::fork::REAL_BROWSER_DISABLED {
+        return false;
+    }
     match env_override {
         Some("real") => true,
         Some("agent") => false,
@@ -382,134 +392,60 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    // FORK (FORK.md): upstream's `lane_decision_prefers_env_over_config` and
+    // `fingerprint_tracks_launch_inputs_only_on_the_real_lane` asserted that a
+    // real lane could be selected by env or config. That selection is removed
+    // here, so they are replaced by the gate assertions below; the fork's
+    // contract is "no input selects the real lane".
     #[test]
-    fn lane_decision_prefers_env_over_config() {
-        assert!(
-            lane_from(Some("real"), false),
-            "env real beats a disabled config"
-        );
-        assert!(
-            !lane_from(Some("agent"), true),
-            "env agent beats an enabled config"
-        );
-        assert!(lane_from(None, true));
-        assert!(!lane_from(None, false));
-        // Anything that is not exactly real|agent falls through to the
-        // config — a typo must never silently flip the lane.
-        assert!(
-            !lane_from(Some("Real"), false),
-            "a typo does not force the real lane"
-        );
-        assert!(
-            lane_from(Some("agentx"), true),
-            "a typo does not force the agent lane either"
-        );
+    fn lane_is_always_the_agent_lane() {
+        for (env, enabled) in [
+            (Some("real"), true),
+            (Some("real"), false),
+            (Some("Real"), true),
+            (Some("agentx"), true),
+            (Some("agent"), true),
+            (None, true),
+            (None, false),
+        ] {
+            assert!(
+                !lane_from(env, enabled),
+                "env {env:?} + config enabled={enabled} must not select the real lane"
+            );
+        }
     }
 
+    // FORK (FORK.md): upstream's `fingerprint_tracks_launch_inputs_only_on_the_real_lane`
+    // asserted that mode/profile/visible enter the launch fingerprint, which
+    // presupposes a selectable real lane. In this build the lane is pinned to
+    // agent, so the property that matters is the opposite one: a stale
+    // `realbrowser.json` — or someone editing it — must never drift the
+    // fingerprint and force a browser relaunch.
     #[test]
-    fn fingerprint_tracks_launch_inputs_only_on_the_real_lane() {
-        let base = Config {
-            enabled: true,
-            ..Default::default()
-        };
-        let fp = launch_fingerprint_from(None, &base);
-        assert_eq!(
-            fp,
-            launch_fingerprint_from(None, &base),
-            "stable across reads"
-        );
-
-        let mut other = base.clone();
-        other.visible = false;
-        assert_ne!(
-            fp,
-            launch_fingerprint_from(None, &other),
-            "visible is a launch input"
-        );
-        let mut other = base.clone();
-        other.mode = Mode::Profile;
-        assert_ne!(
-            fp,
-            launch_fingerprint_from(None, &other),
-            "mode is a launch input"
-        );
-        let mut other = base.clone();
-        other.profile = Some("Work".into());
-        assert_ne!(
-            fp,
-            launch_fingerprint_from(None, &other),
-            "profile is a launch input"
-        );
-
-        // The lane itself is part of the fingerprint: on→off must drift.
-        let off = Config {
-            enabled: false,
-            ..base.clone()
-        };
-        assert_ne!(fp, launch_fingerprint_from(None, &off));
-
-        // Agent lane (env override): the real-lane fields cannot affect an
-        // agent browser, so the fingerprint stays put — no pointless relaunch.
-        let a1 = Config {
+    fn fingerprint_ignores_real_lane_config_in_this_build() {
+        let a = Config {
             enabled: true,
             mode: Mode::Clone,
             visible: true,
             profile: Some("Work".into()),
             ..Default::default()
         };
-        let a2 = Config {
-            enabled: true,
-            mode: Mode::Profile,
+        let b = Config {
+            enabled: false,
+            mode: Mode::Attach,
             visible: false,
             profile: None,
             ..Default::default()
         };
         assert_eq!(
-            launch_fingerprint_from(Some("agent"), &a1),
-            launch_fingerprint_from(Some("agent"), &a2)
+            launch_fingerprint_from(None, &a),
+            launch_fingerprint_from(None, &b),
+            "real-browser settings cannot affect an agent-lane launch"
         );
-        // ...and the agent lane never equals the real lane.
-        assert_ne!(
-            launch_fingerprint_from(Some("agent"), &a1),
-            launch_fingerprint_from(None, &a1)
-        );
-
-        // `visible` shapes launches we OWN only: under Attach (never a
-        // launch) toggling it must NOT drift — an attached page must not be
-        // reset for a setting that cannot affect it...
-        let at1 = Config {
-            enabled: true,
-            mode: Mode::Attach,
-            visible: true,
-            ..Default::default()
-        };
-        let at2 = Config {
-            enabled: true,
-            mode: Mode::Attach,
-            visible: false,
-            ..Default::default()
-        };
         assert_eq!(
-            launch_fingerprint_from(None, &at1),
-            launch_fingerprint_from(None, &at2),
-            "visible cannot affect an attach session"
-        );
-        // ...while every owned mode still gets the relaunch on a toggle.
-        let cl1 = Config {
-            enabled: true,
-            mode: Mode::Clone,
-            visible: true,
-            ..Default::default()
-        };
-        let cl2 = Config {
-            enabled: true,
-            mode: Mode::Clone,
-            visible: false,
-            ..Default::default()
-        };
-        assert_ne!(
-            launch_fingerprint_from(None, &cl1),
-            launch_fingerprint_from(None, &cl2)
+            launch_fingerprint_from(Some("real"), &a),
+            launch_fingerprint_from(None, &b),
+            "BLADE_LANE=real cannot change the launch either"
         );
     }
 
@@ -630,8 +566,16 @@ mod tests {
         cfg.browser = Some("brave".into());
         save_config_to(&path, &cfg).expect("save");
         let back = config_from(&path);
+        // FORK (FORK.md): every field round-trips EXCEPT the lane switch, which
+        // the loader forces off so no consumer can act on it. A file written by
+        // an upstream install therefore reads back as "lane unavailable" here.
         assert!(
-            back.enabled && back.mode == Mode::Clone && back.browser.as_deref() == Some("brave")
+            !back.enabled,
+            "the loader must never hand back an enabled real lane"
+        );
+        assert!(
+            back.mode == Mode::Clone && back.browser.as_deref() == Some("brave"),
+            "the rest of the operator's file must survive untouched"
         );
 
         std::fs::write(&path, b"{ not json").unwrap();
@@ -775,10 +719,15 @@ mod tests {
             mode: Mode::Clone,
             ..Default::default()
         };
-        assert_ne!(
+        // FORK (FORK.md): upstream needed a refreshed clone template to drift
+        // running sessions, because a clone existed to refresh. This build has
+        // no clone, so the import generation must NOT drift anything — a
+        // leftover `<data dir>/realbrowser/*/import` file cannot force browser
+        // relaunches on an agent session.
+        assert_eq!(
             launch_fingerprint_full(None, &clone_cfg, Some("gen-1"), false),
             launch_fingerprint_full(None, &clone_cfg, Some("gen-2"), false),
-            "refreshed clone template must drift running MCP/daemon sessions"
+            "no clone exists here, so an import generation cannot drift a launch"
         );
         assert_ne!(
             launch_fingerprint_full(None, &clone_cfg, Some("gen-1"), false),
@@ -799,10 +748,14 @@ mod tests {
             mode: Mode::Attach,
             ..Default::default()
         };
-        assert_eq!(
+        // FORK (FORK.md): upstream exempted Attach from audio drift because an
+        // attached browser is never launched by the driver. There is no attach
+        // session here: every launch is the owned agent browser, where the audio
+        // setting IS a launch input — so this flips from eq to ne.
+        assert_ne!(
             launch_fingerprint_full(None, &attach_cfg, Some("gen-1"), false),
             launch_fingerprint_full(None, &attach_cfg, Some("gen-2"), true),
-            "attach mode never owns launches so clone gen and audio must not reset it"
+            "the only lane is the owned agent browser, where audio is a launch input"
         );
     }
 }

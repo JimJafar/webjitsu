@@ -189,6 +189,14 @@ pub struct ImportStats {
 /// are excluded — the clone must open a fresh window, not the user's tab set.
 /// The SOURCE is only ever read.
 pub fn import_template(id: &str, src: &Path) -> Result<ImportStats> {
+    // FORK (`fork::REAL_BROWSER_DISABLED`, see FORK.md): this copy is the step
+    // that hands an agent every cookie, login and localStorage entry in a real
+    // profile, so it cannot happen in this build — as defence in depth it is
+    // refused here too, independently of the lane gate in `lane_from`, so a
+    // future refactor or a reverted lane gate still cannot read a user profile.
+    if crate::fork::REAL_BROWSER_DISABLED {
+        return Err(crate::fork::blocked("importing a real browser profile"));
+    }
     if !src.is_dir() {
         return Err(BladeError::Other(format!(
             "profile dir not found: {}",

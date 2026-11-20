@@ -29,6 +29,16 @@ const GITHUB_REPO: &str = "dondai44423/bladebro";
 
 /// Dispatch an update-hub command.
 pub async fn run(cmd: &str, args: &[String]) -> Result<()> {
+    // FORK (`fork::SELF_UPDATE_DISABLED`, see FORK.md): self-update and
+    // rollback are refused before anything else. `bladebro update` downloads
+    // upstream's release and swaps it into this exact path, which would put the
+    // real-browser lane back under a user who disabled it — and the same for a
+    // backup restore. Updating this build is a source operation (FORK.md).
+    if crate::fork::SELF_UPDATE_DISABLED
+        && matches!(cmd, "update" | "-u" | "rollback" | "--rollback")
+    {
+        return Err(crate::fork::blocked("self-update / rollback"));
+    }
     match cmd {
         "update" | "-u" => update(args).await,
         "doctor" | "-doc" => doctor::run().await,
@@ -268,10 +278,17 @@ async fn update(args: &[String]) -> Result<()> {
 /// - ahead:   local build is newer than the latest release
 async fn show_version() -> Result<()> {
     let platform = version::platform_label();
-    let channel = version::install_channel_label();
-    let check_disabled = std::env::var("BLADE_NO_UPDATE_CHECK")
-        .map(|v| v == "1")
-        .unwrap_or(false);
+    // FORK: name this build in its own output, so `bladebro -v` (and anything
+    // pasted into a bug report) shows a patched binary, not an upstream one.
+    let channel = format!(
+        "{} · fork {}",
+        version::install_channel_label(),
+        crate::fork::FORK_TAG
+    );
+    let channel = channel.as_str();
+    // Upstream release tags describe upstream's binary; comparing this build
+    // against them would only nag about an update that must not be installed.
+    let check_disabled = crate::fork::update_check_disabled();
 
     let fetched = if check_disabled {
         None
@@ -290,8 +307,8 @@ async fn show_version() -> Result<()> {
                 platform: &platform,
                 install_channel: channel,
                 status_tone: ui::Tone::Smoke,
-                status_badge: "OFFLINE",
-                status_detail: "update check disabled (BLADE_NO_UPDATE_CHECK=1)",
+                status_badge: "FORK",
+                status_detail: "upstream release check disabled in this build (fork builds track their own source)",
                 action_cmd: None,
             });
         }

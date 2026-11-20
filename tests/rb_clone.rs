@@ -1,3 +1,7 @@
+// FORK: every test in this file drives `bladebro rb`, whose lane this build removes
+// (see FORK.md). They are kept so the upstream coverage survives a rebase and a
+// future re-enable, and marked #[ignore] so the suite reports them honestly.
+
 //! Real-lane clone template integrity, through real CLI subprocesses with an
 //! isolated HOME/PATH/BLADE_HOME. Fake user-data dirs only — no browser is
 //! launched and no real profile is ever read.
@@ -106,6 +110,7 @@ fn s(p: &Path) -> &str {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn selecting_a_profile_in_another_user_data_root_reimports_the_clone() {
     // The clone template is keyed by browser id only. Pointing `rb profile`
     // at a different user-data root used to keep the OLD root's clone and
@@ -136,6 +141,7 @@ fn selecting_a_profile_in_another_user_data_root_reimports_the_clone() {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn refresh_and_forget_refuse_while_a_clone_session_is_live() {
     // `rb refresh` / `rb forget` only stopped the CLI daemon. A live MCP
     // server's clone session survived: its exit synced the stale copy back
@@ -169,6 +175,7 @@ fn refresh_and_forget_refuse_while_a_clone_session_is_live() {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn refresh_and_forget_abort_when_the_daemon_does_not_stop() {
     // The daemon restart helper swallowed the stop result: a daemon that
     // failed to stop kept its clone session while the template was replaced
@@ -200,6 +207,7 @@ fn refresh_and_forget_abort_when_the_daemon_does_not_stop() {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn stale_clone_auto_refreshes_when_source_cookies_update() {
     // Reproduces the exact reported bug: user ran `rb on` earlier, then logged
     // into a site (e.g. x.com) in their real browser, then ran `rb on` again.
@@ -239,6 +247,7 @@ fn stale_clone_auto_refreshes_when_source_cookies_update() {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn clone_sanitizes_crashed_preferences_and_skips_sessions_and_component_caches() {
     let f = Fixture::new();
     let src_root = f.0.join("helium-config/net.imput.helium");
@@ -295,6 +304,7 @@ fn clone_sanitizes_crashed_preferences_and_skips_sessions_and_component_caches()
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn audio_cli_defaults_muted_and_persists_opt_in_toggle() {
     let f = Fixture::new();
     let run_audio = |args: &[&str], env_audio: Option<&str>| -> Value {

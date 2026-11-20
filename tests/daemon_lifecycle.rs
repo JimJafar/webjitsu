@@ -262,17 +262,40 @@ fn stop_json_is_one_object_and_lane_restart_emits_no_stray_stdout() {
     assert_eq!(value["ok"], true);
     assert_eq!(value["text"], "daemon stopped");
     assert!(wait_exit(&mut daemon, 2).unwrap().success());
+    // FORK (FORK.md): upstream asserted that `rb off` restarted the daemon —
+    // that was the whole point of the switch. Here `rb off` is a successful
+    // no-op, and the contracts that still matter are: exactly one JSON object on
+    // stdout (no stray plaintext line), the lane reported disabled even with a
+    // stale `enabled: true` config, and the live daemon LEFT ALONE — nothing
+    // switched lanes, so nothing may be torn down under a running session.
     std::fs::write(home.join("realbrowser.json"), br#"{"enabled":true}"#).unwrap();
     let mut daemon = start_daemon(&home);
     let output = Command::new(bin())
         .args(["--json", "rb", "off"])
         .env("BLADE_HOME", &home)
+        .env("BLADE_LANE", "real")
         .output()
         .unwrap();
-    let value: serde_json::Value = serde_json::from_slice(&output.stdout)
-        .expect("lane restart must not print a plaintext stop line");
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap_or_else(|e| {
+        panic!(
+            "rb off stdout must be one JSON object ({e}): {}",
+            String::from_utf8_lossy(&output.stdout)
+        )
+    });
     assert!(output.status.success());
     assert_eq!(value["ok"], true);
+    assert_eq!(value["enabled"], false);
+    assert_eq!(value["disabled_in_this_build"], true);
+    assert!(
+        daemon.try_wait().unwrap().is_none(),
+        "a no-op `rb off` must not stop a running daemon"
+    );
+    let stopped = Command::new(bin())
+        .args(["--json", "stop"])
+        .env("BLADE_HOME", &home)
+        .output()
+        .unwrap();
+    assert!(stopped.status.success(), "`stop` must still work");
     assert!(wait_exit(&mut daemon, 2).unwrap().success());
     std::fs::remove_dir_all(home).unwrap();
 }

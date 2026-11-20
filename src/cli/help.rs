@@ -53,7 +53,7 @@ COMMANDS
   vision [--marks]                screenshot (saved to a file; path printed)
   daemon | stop                   manage the persistent Chrome session
   mcp                             MCP server on stdio — add to your agent's client config
-  rb on|off [sub]                 real-browser lane: drive YOUR browser (see 'help rb')
+  rb (removed in this build)      real-browser lane is deleted here: every rb command returns 'blocked:'
   audio [on|off|status]           browser sound output (muted by default; opt-in with 'audio on')
   hermes on|off|status             switch Hermes' browser to Bladebro; reversible MCP setup
   audit                           stealth audit — vector suite + boot self-check + drift stamp
@@ -108,40 +108,19 @@ conventions, and examples. Fetch it once, then drive the CLI with --json.
 /// inputs of six or more chars).
 pub fn suggest_command(cmd: &str) -> Option<&'static str> {
     /// Words users reach for that map onto a real command.
-    const ALIASES: &[(&str, &str)] = &[
-        ("browser", "rb use"),
-        ("browsers", "rb use"),
-        ("lane", "rb"),
-        ("real", "rb"),
-        ("mute", "audio"),
-        ("unmute", "audio"),
-        ("sound", "audio"),
-    ];
+    // FORK (FORK.md): upstream mapped "browser"/"browsers"/"lane"/"real" onto
+    // the rb commands. Pointing an agent at a command this build refuses would
+    // only waste its turn, so those aliases are gone.
+    const ALIASES: &[(&str, &str)] = &[("mute", "audio"), ("unmute", "audio"), ("sound", "audio")];
     let lower = cmd.to_ascii_lowercase();
     if let Some((_, target)) = ALIASES.iter().find(|(a, _)| *a == lower) {
         return Some(target);
     }
     const COMMANDS: &[&str] = &[
-        "nav",
-        "see",
-        "act",
-        "state",
-        "run",
-        "vision",
-        "daemon",
-        "stop",
-        "help",
-        "rb",
-        "realbrowser",
-        "audio",
-        "hermes",
-        "mcp",
-        "audit",
-        "probe",
-        "targets",
-        "update",
-        "doctor",
-        "rollback",
+        "nav", "see", "act", "state", "run", "vision", "daemon", "stop", "help",
+        // FORK: "rb" / "realbrowser" removed from the suggestion vocabulary —
+        // this build refuses them (see FORK.md).
+        "audio", "hermes", "mcp", "audit", "probe", "targets", "update", "doctor", "rollback",
         "version",
     ];
     let mut best: Option<(usize, &'static str)> = None;
@@ -358,22 +337,20 @@ fn command_help_json(cmd: &str) -> Option<Value> {
                 "does not alter externally attached browsers (`rb mode attach` / `--port`), and does not affect Blink media APIs or WebAudio fingerprinting"
             ]
         }),
+        // FORK (FORK.md): the real-browser lane is removed. This arm stays so
+        // `help rb` explains the refusal instead of looking like a typo, and
+        // `rb status` answers with `disabled_in_this_build: true`.
         "rb" | "realbrowser" => json!({
-            "usage": "bladebro rb [on|off|status|mode <m>|use [id|--binary <path|auto>]|profile [key|auto]|visible on|off|idle-hum on|off|idle-shutdown on|off|audio on|off|status|refresh|forget|pause|resume]",
+            "usage": "bladebro rb status (reports disabled) — every other rb subcommand returns 'blocked:'",
             "tool": null,
+            "removed_in_this_build": true,
             "examples": [
-                "bladebro rb on",
-                "bladebro rb status --json",
-                "bladebro rb mode attach",
-                "bladebro rb use --binary /usr/bin/chromium",
-                "bladebro rb pause"
+                "bladebro rb status --json"
             ],
             "notes": [
-                "real-browser lane: the agent drives YOUR Chromium-family browser (your profile data, your display) with zero page patches; the driver-side stack (perception, LPM, refs, adapters, token efficiency, biometrics) is unchanged",
-                "mechanisms: clone (default — imported copy that auto-refreshes whenever your source profile has newer logins/state; your browser may stay open), profile (your live profile — close the browser first), attach (a running browser exposing a debug endpoint, incl. fixed-port Linux discovery and Chrome 144+ chrome://inspect#remote-debugging); auto = attach if a live endpoint is reachable, else clone",
-                "attach caveat (measured, Chrome 151): an ephemeral `--remote-debugging-port=0` arm — and Chrome's approval flow — makes Chrome itself report navigator.webdriver=true; arm a FIXED port for a false reading (the lane never masks Chrome's own value)",
-                "every surface picks a switch or refreshed clone up at its next action — the CLI daemon restarts immediately; a running MCP session switches its browser on the next call (owned browsers relaunch; an attached browser is detached, not closed)",
-                "`rb pause` refuses input, navigation, history, downloads, collecting and tab operations (reads, waits and eval stay available); `rb forget` wipes the imported copy; `rb refresh` forces a fresh re-import; `rb use --binary` supports custom/nix/AppImage/Flatpak binaries"
+                "REMOVED IN THIS FORK: the real-browser lane (drive your own browser, enumerate its profiles, clone its cookies/logins, or attach to a running one) does not exist in this build — see FORK.md",
+                "the isolated agent browser under the blade data dir is the only lane; `state save|load` still persists ITS OWN state, which is all an agent needs",
+                "a leftover realbrowser.json with `enabled: true`, or BLADE_LANE=real, cannot re-enable it: the lane decision and the profile import are both gated (src/fork.rs)"
             ]
         }),
         "hermes" => json!({
@@ -398,17 +375,17 @@ fn command_help_json(cmd: &str) -> Option<Value> {
             "examples": ["bladebro audit"],
             "notes": ["stealth audit — local vector suite + boot self-check + cross-restart consistency stamp; every check must pass (the run prints its own total); any FAIL exits non-zero"]
         }),
+        // FORK (`fork::SELF_UPDATE_DISABLED`, see FORK.md): self-update would
+        // install upstream's unpatched binary and undo this fork, so the help
+        // says so instead of advertising a working command.
         "update" => json!({
-            "usage": "bladebro update | -u [--check] [--force]",
+            "usage": "bladebro update — REMOVED in this build (update by rebuilding from source)",
             "tool": null,
-            "flags": {
-                "--check / -c": "dry run — check only",
-                "--force / -f": "reinstall even at the same version"
-            },
-            "examples": ["bladebro -u --check", "bladebro -u"],
+            "removed_in_this_build": true,
+            "examples": [],
             "notes": [
-                "download → verify → back up → swap, from GitHub releases",
-                "npm installs are detected and redirected to `npm update -g bladebro` (override: --force)"
+                "self-update and --rollback are refused in this build: installing upstream's release over it would silently restore the real-browser lane this fork removes (FORK.md)",
+                "to update: `git fetch upstream`, merge the new tag, keep the gates in src/fork.rs, then `cargo build --release`"
             ]
         }),
         "doctor" => json!({
@@ -418,8 +395,10 @@ fn command_help_json(cmd: &str) -> Option<Value> {
             "notes": ["13 system checks: data root, Chrome, Xvfb, profile, logins, hygiene, locks, network, binary, disk, version"]
         }),
         "rollback" => json!({
-            "usage": "bladebro --rollback",
+            // FORK: refused — see the `update` arm above and FORK.md.
+            "usage": "bladebro --rollback — REMOVED in this build (a backup restore would put an unpatched binary back)",
             "tool": null,
+            "removed_in_this_build": true,
             "examples": ["bladebro --rollback"],
             "notes": ["restores the previous binary from <data dir>/backups (written by every self-update)"]
         }),
@@ -474,9 +453,12 @@ pub fn help_json(cmd: Option<&str>) -> Result<String> {
     }
 
     let mut commands = serde_json::Map::new();
+    // FORK (FORK.md): "rb" is dropped from the machine-readable command list so
+    // an agent discovering the surface through `help --json` is never offered a
+    // command this build refuses. `help rb` still documents the removal.
     for c in [
-        "nav", "see", "act", "state", "run", "vision", "daemon", "stop", "help", "rb", "mcp",
-        "audit", "update", "doctor", "rollback", "version", "hermes",
+        "nav", "see", "act", "state", "run", "vision", "daemon", "stop", "help", "mcp", "audit",
+        "update", "doctor", "rollback", "version", "hermes",
     ] {
         if let Some(d) = command_help_json(c) {
             commands.insert(c.to_string(), d);
@@ -770,53 +752,26 @@ Externally attached browsers (`rb mode attach` / `--port`) are untouched.
 "#
         }
         "rb" | "realbrowser" => {
-            r#"bladebro rb — the real-browser lane
+            r#"bladebro rb — REMOVED in this build
 
 USAGE
-  bladebro rb                     status (same as `rb status`)
-  bladebro rb on | off            switch the lane (true/false also accepted)
-  bladebro rb mode <m>            auto | clone | profile | attach
-  bladebro rb use [id]            list / choose the browser
-  bladebro rb use --binary <path|auto>
-                                  custom browser binary (nix wrapper, AppImage,
-                                  flatpak export, dev build)
-  bladebro rb profile [key]       list / choose the profile (an absolute path
-                                  to a profile dir also works; `auto` resets)
-  bladebro rb visible on|off      real window (default) vs --headless=new
-  bladebro rb idle-hum on|off     behavioral idle noise while thinking (default on)
-  bladebro rb idle-shutdown on|off
-                                  may the idle timeout close the real browser?
-                                  (default off — it is the user's)
-  bladebro rb audio [on|off|status]
-                                  alias for `bladebro audio` (muted by default)
-  bladebro rb refresh             re-import the profile into the clone
-  bladebro rb forget              wipe the imported copy
-  bladebro rb pause | resume      hand the browser to yourself / back
-                                  (paused: input, navigation, history,
-                                  downloads, collecting and tab ops refuse;
-                                  reads/waits/eval stay)
+  bladebro rb status              reports the disabled state (exit 0)
+  bladebro rb <anything else>     blocked: (exit non-zero)
 
-The lane: instead of Bladebro's isolated browser, the agent drives YOUR
-Chromium-family browser with YOUR profile data on YOUR display — and the
-page-injection layer switches OFF entirely (a real environment needs no
-masks; truth has no tells to catch). Everything driver-side still runs:
-perception, refs, adapters, token efficiency, biometrics + idle hum.
+This fork of Bladebro deletes the real-browser lane: the agent never
+drives your own browser, never enumerates your Chromium profiles, and
+never copies the cookies, logins and storage out of one. The isolated
+agent browser under the blade data dir is the only lane, so there is
+nothing to switch, select, refresh, pause or forget.
 
-Mechanisms: clone (default — imports your profile and automatically refreshes
-whenever your real browser has newer logins/cookies/storage; your browser may
-stay open; the source is never written to), profile (launches on your live
-profile — close the browser first; branded Google Chrome 136+ refuses CDP
-on the default dir, so use clone/attach there), attach (drives a running
-browser that already exposes a debug endpoint — fixed-port Linux discovery,
---remote-debugging-port=0, or Chrome 144+ chrome://inspect#remote-debugging
-with per-connection approval). Attach caveat (measured, Chrome 151): an
-ephemeral `--remote-debugging-port=0` arm — and the approval flow — makes
-Chrome itself report navigator.webdriver=true on every page; arm a FIXED
-port for a false reading. The lane never masks Chrome's own value.
+WHY
+  A real profile is the union of every session you are logged into.
+  Handing it to an agent that reads untrusted pages puts page content in
+  a position to act as you, and a copied profile sits on disk as plain
+  session tokens. `bladebro state save|load` still persists the agent
+  browser's own state, which is all an agent needs.
 
-The switch applies to the CLI daemon and to MCP sessions — the daemon
-restarts immediately, and a running MCP relaunches its browser at the next
-call; no host restart is ever needed.
+  FORK.md records the gates and how to re-enable a removed feature.
 "#
         }
         "stop" => {
@@ -903,16 +858,21 @@ tests/vectors.html in the current directory overrides it.
 "#
         }
         "update" => {
-            r#"bladebro -u / update — self-update
+            r#"bladebro -u / update — REMOVED in this build
 
 USAGE
-  bladebro -u [--check | -c] [--force | -f]
+  bladebro -u                     blocked: (exit non-zero)
 
-Download → verify (magic + size + executes) → back up → swap, from
-GitHub releases. --check is a dry run; --force reinstalls the current
-version. npm installs are detected (path contains node_modules) and
-redirected to `npm update -g bladebro`; --force overrides. After an
-update: restart your MCP client. Regret it: bladebro --rollback.
+Self-update is refused here. Downloading upstream's release and swapping
+it in would replace this build with one that has the real-browser lane
+back, which is the one thing this fork exists to prevent — so updating
+is a source operation instead:
+
+  git fetch upstream && git merge upstream/<tag>
+  # keep the gates in src/fork.rs, then
+  cargo build --release
+
+FORK.md records every gate and how to re-enable a removed feature.
 "#
         }
         "doctor" => {
@@ -927,14 +887,14 @@ integrity, disk space, version-vs-latest. Failures print a fix.
 "#
         }
         "rollback" => {
-            r#"bladebro --rollback — restore the previous binary
+            r#"bladebro --rollback — REMOVED in this build
 
 USAGE
-  bladebro --rollback
+  bladebro --rollback             blocked: (exit non-zero)
 
-Restores the most recent backup from <data dir>/backups (written by every
-self-update). The backup is verified as a valid binary first — a corrupted
-newest backup falls through to the next one.
+Restoring a backup would put an older — and possibly unpatched — binary
+back in place, so it is refused with the same gate as `update`. To go
+back: check out the tag you want in this fork's repository and rebuild.
 "#
         }
         "version" => {
@@ -969,7 +929,22 @@ mod tests {
             v["commands"]["mcp"].is_object(),
             "help --json must cover mcp"
         );
-        assert!(v["commands"]["rb"].is_object(), "help --json must cover rb");
+        // FORK (FORK.md): `rb` is deliberately ABSENT from the machine-readable
+        // command list — an agent that discovers the surface through
+        // `help --json` must not be offered a command this build refuses. The
+        // on-demand `help rb` still explains the removal.
+        assert!(
+            v["commands"]["rb"].is_null(),
+            "help --json must not advertise the removed rb command"
+        );
+        // `help <cmd> --json` nests the command detail under "detail".
+        let rb: Value = serde_json::from_str(&help_json(Some("rb")).unwrap()).unwrap();
+        assert!(
+            rb["detail"]["removed_in_this_build"]
+                .as_bool()
+                .unwrap_or(false),
+            "`help rb` must say the command is removed: {rb}"
+        );
         assert!(v["commands"]["doctor"].is_object());
         assert!(v["exit_codes"]["2"].as_str().unwrap().contains("usage"));
         assert!(v["output"]["payloads"]["@file"].as_str().is_some());
@@ -1007,13 +982,12 @@ mod tests {
         assert_eq!(suggest_command("nva"), Some("nav"));
         assert_eq!(suggest_command("stte"), Some("state"));
         assert_eq!(suggest_command("visio"), Some("vision"));
-        assert_eq!(suggest_command("realbrwoser"), Some("realbrowser"));
-        assert_eq!(
-            suggest_command("browser"),
-            Some("rb use"),
-            "the word users reach for"
-        );
-        assert_eq!(suggest_command("browsers"), Some("rb use"));
+        // FORK (FORK.md): the rb vocabulary is out of the suggestion space —
+        // suggesting `rb use` would send an agent to a command this build
+        // refuses, so typos and the words users reach for now suggest nothing.
+        assert_eq!(suggest_command("realbrwoser"), None);
+        assert_eq!(suggest_command("browser"), None);
+        assert_eq!(suggest_command("browsers"), None);
         assert_eq!(suggest_command("completely-unrelated"), None);
     }
 

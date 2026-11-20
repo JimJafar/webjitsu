@@ -11,6 +11,50 @@ fn rb_row(label: &str, value: &str) -> String {
     crate::ui::kv(label, value, 9)
 }
 
+/// FORK (`fork::REAL_BROWSER_DISABLED`, see FORK.md): the one refusal the whole
+/// `rb` surface returns, reached before any config read or write.
+///
+/// `status` (and the `off` spellings) report the disabled state as a success
+/// instead of erroring: `rb status --json` is a probe external tooling and the
+/// daemon surface already call, and a setup script that ran `rb off` must keep
+/// working. Everything else is a refusal, so an agent gets `blocked:` — the
+/// verdict word it already branches on — rather than a half-applied switch.
+fn fork_refuse(sub: &str, json_mode: bool) -> Result<()> {
+    use crate::ui;
+    const OFF_SPELLINGS: &[&str] = &["status", "off", "false", "0", "disable"];
+    if OFF_SPELLINGS.contains(&sub) {
+        if json_mode {
+            println!(
+                "{}",
+                serde_json::json!({
+                    "ok": true,
+                    "enabled": false,
+                    "disabled_in_this_build": true,
+                    "fork": crate::fork::FORK_TAG,
+                    "note": "the real-browser lane is removed in this build (FORK.md); the \
+                             isolated agent browser is the only lane"
+                })
+            );
+        } else {
+            println!(
+                "{} {}",
+                ui::bold("Real-browser lane:"),
+                ui::dim("removed in this build")
+            );
+            println!(
+                "{}",
+                rb_row(
+                    "note",
+                    "this fork drives the isolated agent browser only — no real profile is read, \
+                     cloned, or attached (see FORK.md)"
+                )
+            );
+        }
+        return Ok(());
+    }
+    Err(crate::fork::blocked(&format!("`bladebro rb {sub}`")))
+}
+
 /// `rb refresh` / `rb forget` must not run under a live clone session (an
 /// MCP server, a second daemon): only the CLI daemon can be stopped from
 /// here, and any other session's exit copies its stale clone back over a
@@ -42,6 +86,15 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
     use crate::ui;
 
     let raw_sub = args.first().map(|s| s.as_str()).unwrap_or("status");
+    // FORK (`fork::REAL_BROWSER_DISABLED`, see FORK.md): the whole `rb` surface
+    // is closed here, before any config read or write, so no subcommand can
+    // select a real browser, enumerate a real profile, or import one. `status`
+    // still answers (scripts and `help --json` probe it) and `off` stays a
+    // successful no-op, so an existing `bladebro rb off` in someone's setup
+    // script does not start failing.
+    if crate::fork::REAL_BROWSER_DISABLED {
+        return fork_refuse(raw_sub, json_mode);
+    }
     let sub = match raw_sub {
         "true" | "1" | "enable" => "on",
         "false" | "0" | "disable" => "off",

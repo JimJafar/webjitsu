@@ -803,15 +803,14 @@ fn check_network_from(latest: &Result<String>) -> Check {
             fix: None,
         },
         Err(e) => {
-            let disabled = std::env::var("BLADE_NO_UPDATE_CHECK")
-                .map(|v| v == "1")
-                .unwrap_or(false);
+            let disabled = crate::fork::update_check_disabled();
             if disabled {
                 Check {
                     group: Group::Network,
                     name: "Release registry",
-                    status: Status::Warn,
-                    detail: "skipped (BLADE_NO_UPDATE_CHECK=1)".into(),
+                    status: Status::Pass,
+                    detail: "not contacted (this fork build does not track upstream releases)"
+                        .into(),
                     fix: None,
                 }
             } else {
@@ -939,6 +938,19 @@ fn check_version_from(latest: &Result<String>) -> Check {
                 ),
                 fix: None,
             },
+        },
+        Err(_) if crate::fork::update_check_disabled() => Check {
+            // FORK: not a warning — this build intentionally never compares
+            // itself with upstream's releases (FORK.md).
+            group: Group::Network,
+            name: "Version",
+            status: Status::Pass,
+            detail: format!(
+                "v{} · fork {} (updated from source, not from a release)",
+                super::CURRENT_VERSION,
+                crate::fork::FORK_TAG
+            ),
+            fix: None,
         },
         Err(_) => Check {
             group: Group::Network,

@@ -74,7 +74,13 @@ fn help_is_routed_to_the_named_command() {
     // run (`mcp --help` would start a server, `-u --help` would update).
     for (args, marker) in [
         (&["mcp", "--help"][..], "bladebro mcp — MCP server"),
-        (&["-u", "--help"], "bladebro -u / update — self-update"),
+        // FORK (FORK.md): the marker is this build's title for the removed
+        // command — what is being asserted is unchanged, that `--help` routes to
+        // the help text and the handler (an actual self-update) never runs.
+        (
+            &["-u", "--help"],
+            "bladebro -u / update — REMOVED in this build",
+        ),
         (&["audit", "-h"], "bladebro audit — stealth audit"),
     ] {
         let out = bladebro(&home, args);

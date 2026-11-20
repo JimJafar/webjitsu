@@ -1,3 +1,7 @@
+// FORK: every test in this file drives `bladebro rb`, whose lane this build removes
+// (see FORK.md). They are kept so the upstream coverage survives a rebase and a
+// future re-enable, and marked #[ignore] so the suite reports them honestly.
+
 //! Real CLI subprocesses isolate HOME/PATH from parallel tests. Browser files
 //! here exercise discovery only; tools/rb_live/helium.py drives official Helium.
 #![cfg(target_os = "linux")]
@@ -77,6 +81,7 @@ impl Drop for Fixture {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn helium_discovery_skips_directories_and_honors_its_config_home() {
     let f = Fixture::new();
     let listing = f.cli(&["use"]);
@@ -101,6 +106,7 @@ fn helium_discovery_skips_directories_and_honors_its_config_home() {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn profile_metadata_cannot_select_deleted_profiles_or_escape_the_root() {
     let f = Fixture::new();
     let root = f.0.join("helium-config/net.imput.helium");
@@ -141,6 +147,7 @@ fn profile_metadata_cannot_select_deleted_profiles_or_escape_the_root() {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn relative_and_empty_config_homes_do_not_select_cwd_profiles() {
     let f = Fixture::new();
     let root = f.0.join("home/.config/net.imput.helium");
@@ -174,6 +181,7 @@ fn relative_and_empty_config_homes_do_not_select_cwd_profiles() {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn forget_refuses_path_ids_without_deleting_outside_its_namespace() {
     let f = Fixture::new();
     let blade = f.0.join("blade");
@@ -215,6 +223,7 @@ fn forget_refuses_path_ids_without_deleting_outside_its_namespace() {
 }
 
 #[test]
+#[ignore = "fork: exercises the real-browser lane, removed in this build (FORK.md)"]
 fn discovered_binary_keeps_its_symlink_name() {
     // Snap installs `/snap/bin/chromium` as a symlink to `/usr/bin/snap`,
     // which dispatches on argv[0]: storing the resolved target launches snap

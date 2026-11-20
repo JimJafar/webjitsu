@@ -128,11 +128,23 @@ pub fn config() -> Config {
 }
 
 /// Load from an explicit path (unit-testable).
+///
+/// FORK (`fork::REAL_BROWSER_DISABLED`, see FORK.md): the switch is forced off
+/// on the way in, so no reader anywhere — the lane decision, the daemon's drift
+/// check, `doctor`, the fingerprint — can act on a config that enables the real
+/// lane. That covers the realistic case of a `realbrowser.json` left behind by
+/// an earlier upstream install (or hand-edited) turning an agent session into a
+/// real-browser session by accident. The rest of the file is passed through
+/// untouched so an operator can still inspect what upstream had selected.
 pub fn config_from(path: &Path) -> Config {
-    std::fs::read_to_string(path)
+    let mut cfg: Config = std::fs::read_to_string(path)
         .ok()
         .and_then(|t| serde_json::from_str(&t).ok())
-        .unwrap_or_default()
+        .unwrap_or_default();
+    if crate::fork::REAL_BROWSER_DISABLED {
+        cfg.enabled = false;
+    }
+    cfg
 }
 
 /// Persist the config (0600 — it names the user's browser and profile).

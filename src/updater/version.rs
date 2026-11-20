@@ -79,12 +79,13 @@ fn shared_probe_client() -> Result<&'static reqwest::Client> {
 ///
 /// No API key needed. No rate limits. Works for all users out of the box.
 pub async fn fetch_latest_tag() -> Result<String> {
-    if std::env::var("BLADE_NO_UPDATE_CHECK")
-        .map(|v| v == "1")
-        .unwrap_or(false)
-    {
+    // FORK (`fork::SELF_UPDATE_DISABLED`, see FORK.md): the single chokepoint
+    // for release-registry traffic — `update`, `-v` and `doctor` all come
+    // through here, so one gate keeps this build from contacting upstream and
+    // from being told to install a binary that would undo the fork.
+    if crate::fork::update_check_disabled() {
         return Err(BladeError::Other(
-            "update check disabled (BLADE_NO_UPDATE_CHECK)".into(),
+            "release check disabled in this build (fork build / BLADE_NO_UPDATE_CHECK)".into(),
         ));
     }
 

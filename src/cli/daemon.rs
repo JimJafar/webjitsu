@@ -940,23 +940,26 @@ mod tests {
         // of this test binary with its own scratch home.
         const CHILD: &str = "BLADE_DAEMON_REFUSAL_TEST_CHILD";
         if std::env::var_os(CHILD).is_some() {
-            // A daemon whose browser was launched on the agent lane; the rb
-            // config has since been switched on without a daemon restart (a
-            // hand edit, a racing toggle). A command that resolved the agent
-            // lane would now be served on the real one: refused.
+            // FORK (FORK.md): upstream's premise was a real lane switched on
+            // under a running agent-lane daemon, which the daemon had to refuse.
+            // In this build that switch cannot be thrown at all, so the fork's
+            // contract is stronger and asserted directly: a leftover
+            // `realbrowser.json` carrying `enabled: true` (written by an earlier
+            // upstream install, or hand-edited) plus `BLADE_LANE=real` still
+            // resolves to the agent lane — nothing to refuse, nothing to
+            // relaunch, and the flag never moves.
             crate::realbrowser::set_real_lane(false);
-            let why = refusal(&json!({"tool": "see", "lane": "agent", "env": {}}))
-                .expect("a command from the other lane must be refused");
-            assert!(why.contains("daemon: real"), "{why}");
-            // The flag still describes the browser that is running — the
-            // login snapshots and the idle hum consult it until the next
-            // served command relaunches. A refusal that switched it let
-            // `bladebro stop` snapshot a real-lane session's cookies into
-            // the agent's logins.json (lane_from is symmetric; this is the
-            // direction that never sets the real lane in a test).
+            assert!(
+                refusal(&json!({"tool": "see", "lane": "agent", "env": {}})).is_none(),
+                "a stale enabled realbrowser.json must not move the serving lane"
+            );
             assert!(
                 !crate::realbrowser::real_lane(),
-                "a refused request switched the daemon's lane"
+                "the lane flag must stay on the agent browser"
+            );
+            assert!(
+                !crate::realbrowser::config().enabled,
+                "the fork must not act on a config that enables the real lane"
             );
             return;
         }
@@ -972,7 +975,9 @@ mod tests {
             ])
             .env(CHILD, "1")
             .env("BLADE_HOME", &home)
-            .env_remove("BLADE_LANE")
+            // FORK: upstream removed BLADE_LANE here so the config decided. This
+            // build asserts the opposite: even an explicit real request loses.
+            .env("BLADE_LANE", "real")
             .stdin(std::process::Stdio::null())
             .output()
             .unwrap();
