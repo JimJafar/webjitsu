@@ -2,11 +2,21 @@
 
 Canonical engineering guide for coding agents in this repository. Read [CONTRIBUTING.md](CONTRIBUTING.md) alongside this file; if they ever conflict, `CONTRIBUTING.md` wins.
 
+> **This is a fork of Bladebro, and the real-browser lane is deleted.** Read
+> [FORK.md](FORK.md) before changing anything in `src/fork.rs`,
+> `src/realbrowser*`, `src/cli/rb.rs`, `src/cli/help.rs`, or `src/updater/`:
+> those files carry the gates that make `webjitsu rb` unreachable and
+> `webjitsu update` refuse. Do not reintroduce profile enumeration, profile
+> copying, live-profile launches, browser attach, or self-update — including
+> "temporarily" for a test, and including anything that reaches them through a
+> new code path. Where the rest of this file still describes upstream's two
+> lanes, only the `agent` lane exists here.
+
 WebJitsu is a single Rust binary (`webjitsu`) providing an MCP stdio server (`webjitsu mcp`) and CLI (`webjitsu nav`, `see`, `act`, …) that drive stock Chrome/Chromium over the Chrome DevTools Protocol (CDP). No Node.js runtime in the driver, no Playwright/Puppeteer, no internal LLM.
 
 - **Perception as a side-effect of acting**: a persistent Live Page Model reads the live DOM (including open shadow roots and visible same-origin frames) and returns outcome verdicts + compact deltas instead of full-page snapshots.
 - **Stable, self-healing refs (`e1`, `e2`, …)**: keyed by `framePath|role|name|rank` plus an FNV-1a structural fingerprint so refs survive React/Vue/Angular re-renders and retired refs heal through the ref graveyard.
-- **Two lanes**: the default `agent` lane launches an owned Chromium + seasoned profile with full stealth; the real-browser lane (`webjitsu rb on`) drives a user's installed Chromium-family browser (`auto`/`clone`/`profile`/`attach`) with page injection completely disabled.
+- **One lane**: the `agent` lane launches an owned Chromium + seasoned profile with full stealth. Upstream's real-browser lane (driving a user's installed browser via `auto`/`clone`/`profile`/`attach`) is removed in this fork — see [FORK.md](FORK.md) — so `webjitsu rb` refuses and `realbrowser::lane_from()` always resolves to the agent lane.
 
 ## Hard Invariants
 

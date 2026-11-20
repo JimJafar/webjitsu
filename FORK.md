@@ -101,6 +101,19 @@ override:
 export WEBJITSU_BIN=$HOME/.local/bin/webjitsu
 ```
 
+Chrome must be reachable from the process that runs the driver: it searches
+`CHROME_PATH` first, then `PATH`. Nothing persists the choice, so a machine whose
+Chrome lives somewhere unusual (a Playwright download under
+`~/.cache/ms-playwright`, for instance) needs it exported in the shell that starts
+the agent — pi passes its own environment to the MCP server it spawns:
+
+```sh
+# a glob will not expand inside an assignment, so resolve it:
+export CHROME_PATH=$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux64/chrome | sort -V | tail -1)
+```
+
+`webjitsu doctor` reports what it found.
+
 Check a running install:
 
 ```sh

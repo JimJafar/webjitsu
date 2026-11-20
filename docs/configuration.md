@@ -14,7 +14,7 @@ Set environment variables on the WebJitsu process. For MCP, set them in the clie
 | `BLADE_FRESH=1` | Use an ephemeral browser profile. |
 | `BLADE_INCOGNITO=1` / `0` | Enable or disable the agent browser's incognito compatibility mode. |
 | `CHROME_PATH` | Select an executable Chrome or Chromium path. An invalid explicit override produces an error. |
-| `BLADE_LANE=real` | Select real-browser mode for this process. |
+| `BLADE_LANE=real` | **Inert in this fork.** Upstream selected real-browser mode with it; the lane is removed, so the value is ignored and the agent browser is always used ([FORK.md](../FORK.md)). |
 
 On Unix the normal data root is `~/.local/state/blade` or a previously used `~/.blade`. On Windows it is `%USERPROFILE%\.blade`. Run `webjitsu doctor` to see which path resolved. Use a private directory because it can contain cookies, session snapshots, and page artifacts.
 
@@ -47,7 +47,7 @@ Embedded `user:pass@` credentials are refused at launch. Use an endpoint you can
 | `BLADE_NO_UPDATE_CHECK=1` | Skip update checks. |
 | `BLADE_TRANSPORT=pipe` | Select the optional MCP DevTools pipe. Default is WebSocket. |
 | `BLADE_CHROME_FLAGS` | Extra launch flags, parsed as shell-style arguments. |
-| `BLADE_RB_DEBUG=1` | Show browser stderr for real-browser launches. |
+| `BLADE_RB_DEBUG=1` | Upstream: show browser stderr for real-browser launches. Inert here — this fork never launches a real browser. |
 
 Advanced compatibility settings include `BLADE_GPU`, `BLADE_WEBGL`, `BLADE_MEDIA`, `BLADE_NOISE`, and `BLADE_NO_WARMING`. Defaults are the normal supported starting point. Consult the [browser implementation](../src/browser/) and [compatibility evidence](../SUPPORT-MATRIX.md) when diagnosing a host-specific issue.
 

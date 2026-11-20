@@ -88,6 +88,13 @@ That registers the five tools in pi. The extension finds the binary in this orde
 export WEBJITSU_BIN=$HOME/.local/bin/webjitsu
 ```
 
+The browser is found from `CHROME_PATH`, then `PATH`; pi passes its own
+environment to the server it spawns, so if your Chrome lives somewhere unusual:
+
+```sh
+export CHROME_PATH=$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux64/chrome | sort -V | tail -1)
+```
+
 ## The five tools
 
 | Tool | What it does |
