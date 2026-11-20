@@ -40,7 +40,7 @@ pub(crate) fn shared_download_client() -> Result<&'static reqwest::Client> {
     CLIENT
         .get_or_init(|| {
             reqwest::Client::builder()
-                .user_agent(concat!("bladebro-updater/", env!("CARGO_PKG_VERSION")))
+                .user_agent(concat!("webjitsu-updater/", env!("CARGO_PKG_VERSION")))
                 .tcp_nodelay(true)
                 .connect_timeout(Duration::from_secs(10))
                 .read_timeout(Duration::from_secs(45))
@@ -58,7 +58,7 @@ fn shared_probe_client() -> Result<&'static reqwest::Client> {
     CLIENT
         .get_or_init(|| {
             reqwest::Client::builder()
-                .user_agent(concat!("bladebro-updater/", env!("CARGO_PKG_VERSION")))
+                .user_agent(concat!("webjitsu-updater/", env!("CARGO_PKG_VERSION")))
                 .tcp_nodelay(true)
                 .redirect(reqwest::redirect::Policy::none())
                 .connect_timeout(Duration::from_secs(5))
@@ -126,7 +126,7 @@ pub async fn fetch_latest_tag() -> Result<String> {
     }
 
     // 2. npm registry fallback (works even if GitHub is firewalled or a proxy strips 302).
-    let npm_url = "https://registry.npmjs.org/bladebro/latest";
+    let npm_url = "https://registry.npmjs.org/webjitsu/latest";
     if let Ok(resp) = client.get(npm_url).send().await {
         if resp.status().is_success() {
             if let Ok(json) = resp.json::<serde_json::Value>().await {
@@ -180,7 +180,7 @@ pub(crate) fn is_version_tag(v: &str) -> bool {
 
 /// Construct a Release from a tag.
 /// Download URLs are predictable:
-///   https://github.com/{repo}/releases/download/v{tag}/bladebro-{os}-{arch}
+///   https://github.com/{repo}/releases/download/v{tag}/webjitsu-{os}-{arch}
 /// Both new and legacy asset names are included so `find_asset` (and 404
 /// fallback in `download_binary`) can match.
 pub fn synthetic_release(tag: &str) -> Release {
@@ -194,7 +194,7 @@ pub fn synthetic_release(tag: &str) -> Release {
 
     let mut assets = Vec::new();
 
-    // New naming: bladebro-{os}-{arch}
+    // New naming: webjitsu-{os}-{arch}
     let primary = platform_asset_name();
     assets.push(Asset {
         browser_download_url: format!("{base}/{primary}"),
@@ -202,7 +202,7 @@ pub fn synthetic_release(tag: &str) -> Release {
         size: 0, // learned from Content-Length on response headers
     });
 
-    // Legacy naming: bladebro-{os}-{x86_64|aarch64}
+    // Legacy naming: webjitsu-{os}-{x86_64|aarch64}
     let legacy = legacy_platform_asset_name();
     if legacy != platform_asset_name() {
         assets.push(Asset {
@@ -268,16 +268,16 @@ pub fn is_newer(latest: &str, current: &str) -> bool {
 // ── platform asset naming ────────────────────────────────────────
 
 /// The expected asset name for this platform.
-/// Uses npm-consistent naming: `bladebro-{os}-{arch}{ext}`
-///   Linux x86_64  → bladebro-linux-x64
-///   Windows x64   → bladebro-windows-x64.exe
-///   macOS Intel   → bladebro-darwin-x64
-///   macOS ARM     → bladebro-darwin-arm64
+/// Uses npm-consistent naming: `webjitsu-{os}-{arch}{ext}`
+///   Linux x86_64  → webjitsu-linux-x64
+///   Windows x64   → webjitsu-windows-x64.exe
+///   macOS Intel   → webjitsu-darwin-x64
+///   macOS ARM     → webjitsu-darwin-arm64
 pub fn platform_asset_name() -> String {
     let os = platform_os_name();
     let arch = platform_arch_name();
     let ext = if cfg!(windows) { ".exe" } else { "" };
-    format!("bladebro-{os}-{arch}{ext}")
+    format!("webjitsu-{os}-{arch}{ext}")
 }
 
 /// Legacy asset name (x86_64, macos) — for old releases pre-v3.0.3.
@@ -295,7 +295,7 @@ fn legacy_platform_asset_name() -> String {
         "unknown"
     };
     let ext = if cfg!(windows) { ".exe" } else { "" };
-    format!("bladebro-{os}-{arch}{ext}")
+    format!("webjitsu-{os}-{arch}{ext}")
 }
 
 fn platform_os_name() -> &'static str {
@@ -438,7 +438,7 @@ pub(crate) fn detect_install_method(raw_path: &str) -> &'static str {
         }
         return "npm";
     }
-    if norm.contains("/cellar/bladebro/") || norm.contains("/homebrew/cellar/") {
+    if norm.contains("/cellar/webjitsu/") || norm.contains("/homebrew/cellar/") {
         return "homebrew";
     }
     if norm.contains("/.cargo/bin/") {
@@ -499,13 +499,13 @@ pub fn update_command_hint() -> &'static str {
         return "update via your package manager or rebuild from source";
     }
     match install_method() {
-        "npm" => "npm update -g bladebro",
-        "pnpm" => "pnpm update -g bladebro",
-        "bun" => "bun update -g bladebro",
-        "yarn" => "yarn global upgrade bladebro",
-        "homebrew" => "brew upgrade bladebro",
+        "npm" => "npm update -g webjitsu",
+        "pnpm" => "pnpm update -g webjitsu",
+        "bun" => "bun update -g webjitsu",
+        "yarn" => "yarn global upgrade webjitsu",
+        "homebrew" => "brew upgrade webjitsu",
         "source" => "git pull && cargo build --release",
-        _ => "bladebro -u",
+        _ => "webjitsu -u",
     }
 }
 
@@ -565,7 +565,7 @@ mod tests {
         assert_eq!(
             tag_from_latest_redirect(
                 StatusCode::MOVED_PERMANENTLY,
-                "https://github.com/other/bladebro/releases/latest"
+                "https://github.com/other/webjitsu/releases/latest"
             ),
             None
         );
@@ -604,7 +604,7 @@ mod tests {
     #[test]
     fn platform_asset_name_format() {
         let name = platform_asset_name();
-        assert!(name.starts_with("bladebro-"));
+        assert!(name.starts_with("webjitsu-"));
         assert!(
             name.contains("x64") || name.contains("arm64"),
             "expected arch in name: {name}"
@@ -615,39 +615,39 @@ mod tests {
     fn install_method_detection_handles_windows_and_all_package_managers() {
         assert_eq!(
             detect_install_method(
-                r"C:\Users\don\AppData\Roaming\npm\node_modules\bladebro-windows-x64\bladebro.exe"
+                r"C:\Users\don\AppData\Roaming\npm\node_modules\webjitsu-windows-x64\webjitsu.exe"
             ),
             "npm"
         );
         assert_eq!(
             detect_install_method(
-                "/home/don/.local/share/pnpm/global/5/node_modules/bladebro-linux-x64/bladebro"
+                "/home/don/.local/share/pnpm/global/5/node_modules/webjitsu-linux-x64/webjitsu"
             ),
             "pnpm"
         );
         assert_eq!(
             detect_install_method(
-                "/home/don/.bun/install/global/node_modules/bladebro-linux-x64/bladebro"
+                "/home/don/.bun/install/global/node_modules/webjitsu-linux-x64/webjitsu"
             ),
             "bun"
         );
         assert_eq!(
-            detect_install_method("/opt/homebrew/Cellar/bladebro/4.8.0/bin/bladebro"),
+            detect_install_method("/opt/homebrew/Cellar/webjitsu/4.8.0/bin/webjitsu"),
             "homebrew"
         );
         assert_eq!(
-            detect_install_method(r"C:\src\blade\target\release\bladebro.exe"),
+            detect_install_method(r"C:\src\blade\target\release\webjitsu.exe"),
             "source"
         );
         assert_eq!(
-            detect_install_method("/home/don/blade/target/gate/bladebro"),
+            detect_install_method("/home/don/blade/target/gate/webjitsu"),
             "source"
         );
         assert_eq!(
-            detect_install_method("/home/don/.cargo/bin/bladebro"),
+            detect_install_method("/home/don/.cargo/bin/webjitsu"),
             "cargo"
         );
-        assert_eq!(detect_install_method("/usr/local/bin/bladebro"), "binary");
+        assert_eq!(detect_install_method("/usr/local/bin/webjitsu"), "binary");
     }
 
     #[test]

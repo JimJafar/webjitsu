@@ -1,4 +1,4 @@
-//! `bladebro rb` — the real-browser lane command surface: switch, inspect,
+//! `webjitsu rb` — the real-browser lane command surface: switch, inspect,
 //! pick browser/profile, pause/resume, refresh/forget the clone.
 
 use crate::error::Result;
@@ -57,7 +57,7 @@ fn fork_refuse(sub: &str, json_mode: bool) -> Result<()> {
     Err(crate::error::BladeError::Other(format!(
         "{} The agent browser is the only lane: it uses a dedicated profile under the blade \
          data dir and never reads a real browser profile.",
-        crate::fork::blocked(&format!("`bladebro rb {sub}`"))
+        crate::fork::blocked(&format!("`webjitsu rb {sub}`"))
     )))
 }
 
@@ -72,8 +72,8 @@ fn refuse_under_live_clone_sessions(id: &str, sub: &str) -> Result<()> {
     }
     let owners: Vec<String> = pids.iter().map(|p| format!("pid {p}")).collect();
     Err(crate::error::BladeError::Other(format!(
-        "the `{id}` clone is in use by a running bladebro session ({}) — {} Close that \
-         session (its MCP client, or `bladebro stop`), then retry `bladebro rb {sub}`.",
+        "the `{id}` clone is in use by a running webjitsu session ({}) — {} Close that \
+         session (its MCP client, or `webjitsu stop`), then retry `webjitsu rb {sub}`.",
         owners.join(", "),
         if sub == "forget" {
             "wiping it would delete the profile under its open browser."
@@ -83,7 +83,7 @@ fn refuse_under_live_clone_sessions(id: &str, sub: &str) -> Result<()> {
     )))
 }
 
-/// `bladebro rb ...` — switch between the default agent browser and the
+/// `webjitsu rb ...` — switch between the default agent browser and the
 /// user's real browser (S18). Local config work only: nothing here talks to
 /// a running browser except the daemon restart that makes the switch take
 /// effect on the next launch.
@@ -96,7 +96,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
     // is closed here, before any config read or write, so no subcommand can
     // select a real browser, enumerate a real profile, or import one. `status`
     // still answers (scripts and `help --json` probe it) and `off` stays a
-    // successful no-op, so an existing `bladebro rb off` in someone's setup
+    // successful no-op, so an existing `webjitsu rb off` in someone's setup
     // script does not start failing.
     if crate::fork::REAL_BROWSER_DISABLED {
         return fork_refuse(raw_sub, json_mode);
@@ -252,7 +252,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
                 "Real-Browser Lane",
                 badge,
                 &rows,
-                Some("`bladebro rb on|off` switches the lane · `bladebro help rb` for the full story"),
+                Some("`webjitsu rb on|off` switches the lane · `webjitsu help rb` for the full story"),
             );
             Ok(())
         }
@@ -283,12 +283,12 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
                     }));
                 } else if refreshed {
                     println!(
-                        "{} {} — refreshed clone with newer logins/state (`bladebro rb status` for details)",
+                        "{} {} — refreshed clone with newer logins/state (`webjitsu rb status` for details)",
                         ui::bold("Real-browser lane:"),
                         ui::bold(&ui::green("already ON"))
                     );
                 } else {
-                    println!("{} {}", ui::bold("Real-browser lane:"), ui::bold(&ui::green("already ON")) + " — `bladebro rb status` for details");
+                    println!("{} {}", ui::bold("Real-browser lane:"), ui::bold(&ui::green("already ON")) + " — `webjitsu rb status` for details");
                 }
                 return Ok(());
             }
@@ -297,7 +297,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
             if mode != rb::Mode::Attach && spec.binary.as_os_str().is_empty() {
                 return Err(crate::error::BladeError::Other(format!(
                     "{} has a profile dir but no launchable binary — install it, or pick \
-                     another browser with `bladebro rb use`.",
+                     another browser with `webjitsu rb use`.",
                     spec.name
                 )));
             }
@@ -344,7 +344,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
                 ),
                 (
                     "revert",
-                    "`bladebro rb off` · wipe imported copy: `rb forget`".into(),
+                    "`webjitsu rb off` · wipe imported copy: `rb forget`".into(),
                 ),
                 (
                     "control",
@@ -404,7 +404,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
         "mode" => {
             let m = rest.first().ok_or_else(|| {
                 crate::error::BladeError::Usage(
-                    "bladebro rb mode <auto|clone|profile|attach>".into(),
+                    "webjitsu rb mode <auto|clone|profile|attach>".into(),
                 )
             })?;
             let mode = match m.as_str() {
@@ -438,7 +438,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
                 "off" | "false" | "0" | "no" => false,
                 _ => {
                     return Err(crate::error::BladeError::Usage(format!(
-                        "bladebro rb {sub} <on|off>"
+                        "webjitsu rb {sub} <on|off>"
                     )))
                 }
             };
@@ -494,7 +494,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
             if let Some(val) = bin_arg {
                 if val.is_empty() {
                     return Err(crate::error::BladeError::Usage(
-                        "bladebro rb use --binary <path|auto>".into(),
+                        "webjitsu rb use --binary <path|auto>".into(),
                     ));
                 }
                 if val == "auto" {
@@ -558,7 +558,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
                     println!(
                         "{}",
                         ui::dim(
-                            "hint: `bladebro rb use <id>` selects one · custom / nix / flatpak install: `rb use --binary <path>`"
+                            "hint: `webjitsu rb use <id>` selects one · custom / nix / flatpak install: `rb use --binary <path>`"
                         )
                     );
                 }
@@ -623,7 +623,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
                     println!(
                         "{}",
                         ui::dim(
-                            "hint: `bladebro rb profile <key>` selects one · `rb profile auto` resets · an absolute path to a profile dir also works"
+                            "hint: `webjitsu rb profile <key>` selects one · `rb profile auto` resets · an absolute path to a profile dir also works"
                         )
                     );
                 }
@@ -709,7 +709,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
                 );
                 if !stats.failed_critical.is_empty() {
                     println!(
-                        "{} locked profile file(s) skipped: {} — close {} and run `bladebro rb refresh` again",
+                        "{} locked profile file(s) skipped: {} — close {} and run `webjitsu rb refresh` again",
                         ui::amber("warning:"),
                         stats.failed_critical.join(", "),
                         spec.name
@@ -784,7 +784,7 @@ pub(super) async fn run_rb(args: &[String], json_mode: bool) -> Result<()> {
     }
 }
 
-/// `bladebro audio [on|off|status]` — control browser audio output across both
+/// `webjitsu audio [on|off|status]` — control browser audio output across both
 /// the default agent browser and owned real-browser launches. Muted by default
 /// so media players (YouTube, video ads, audio streams) never play unexpected
 /// sound back to the user unless explicitly opted in.
@@ -798,7 +798,7 @@ pub(super) async fn run_audio(args: &[String], json_mode: bool) -> Result<()> {
         "status" => "status",
         other => {
             return Err(crate::error::BladeError::Usage(format!(
-                "unknown audio option `{other}` — use `bladebro audio [on|off|status]`"
+                "unknown audio option `{other}` — use `webjitsu audio [on|off|status]`"
             )))
         }
     };
@@ -845,7 +845,7 @@ pub(super) async fn run_audio(args: &[String], json_mode: bool) -> Result<()> {
                 "Browser Audio",
                 badge,
                 &rows,
-                Some("`bladebro audio on` enables sound · `bladebro audio off` mutes again"),
+                Some("`webjitsu audio on` enables sound · `webjitsu audio off` mutes again"),
             );
             Ok(())
         }
@@ -867,7 +867,7 @@ pub(super) async fn run_audio(args: &[String], json_mode: bool) -> Result<()> {
             }
             if on {
                 println!(
-                    "{} {} — browser sound is now audible (running MCP sessions pick this up on the next call; `bladebro audio off` mutes again)",
+                    "{} {} — browser sound is now audible (running MCP sessions pick this up on the next call; `webjitsu audio off` mutes again)",
                     ui::bold("Browser audio:"),
                     ui::amber("ON")
                 );

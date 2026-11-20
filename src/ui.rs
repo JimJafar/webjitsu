@@ -22,8 +22,8 @@
 //! 5. otherwise ON exactly when the stream being written is a terminal.
 //!
 //! stdout and stderr decide separately: text bound for stderr uses the
-//! [`err`] painters. `bladebro nav x 2>err.log` on a terminal must not write
-//! ANSI codes into the log, and `bladebro nav x | jq` still colors the error
+//! [`err`] painters. `webjitsu nav x 2>err.log` on a terminal must not write
+//! ANSI codes into the log, and `webjitsu nav x | jq` still colors the error
 //! lines that reach the terminal.
 
 use std::io::IsTerminal;
@@ -363,12 +363,12 @@ mod tests {
 
     #[test]
     fn help_styling_marks_only_headers() {
-        let text = "bladebro v1 — manual\n\nUSAGE\n  bladebro x\n\nEXIT CODES\n  0  ok\n";
+        let text = "webjitsu v1 — manual\n\nUSAGE\n  webjitsu x\n\nEXIT CODES\n  0  ok\n";
         let styled = style_help_impl(text, true);
         assert!(styled.contains("\x1b[1;36mUSAGE\x1b[0m"));
         assert!(styled.contains("\x1b[1;36mEXIT CODES\x1b[0m"));
         assert!(
-            !styled.contains("\x1b[1;36mbladebro"),
+            !styled.contains("\x1b[1;36mwebjitsu"),
             "title line stays plain"
         );
         assert!(
@@ -392,8 +392,8 @@ mod tests {
 
     #[test]
     fn ansi_stripping_and_visible_width_stay_exact() {
-        let s = "\x1b[1;38;2;212;175;55mBLADEBRO\x1b[0m \x1b[31m◈\x1b[0m";
-        assert_eq!(strip_ansi(s), "BLADEBRO ◈");
+        let s = "\x1b[1;38;2;212;175;55mWEBJITSU\x1b[0m \x1b[31m◈\x1b[0m";
+        assert_eq!(strip_ansi(s), "WEBJITSU ◈");
         assert_eq!(visible_width(s), 10);
         assert_eq!(palette::truncate_cols("abcdefghij", 6), "abcde…");
         assert_eq!(palette::truncate_cols("abc", 6), "abc");

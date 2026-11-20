@@ -41,7 +41,7 @@ pub(super) async fn stop_daemon_for_clone_change() -> Result<()> {
             stop_daemon().await.map_err(|e| {
                 BladeError::Other(format!(
                     "the daemon did not stop ({e}) — its clone session would outlive this \
-                     change. Run `bladebro stop`, then retry."
+                     change. Run `webjitsu stop`, then retry."
                 ))
             })?;
         }
@@ -94,7 +94,7 @@ pub async fn run_daemon() -> Result<()> {
         let error = std::io::Error::last_os_error();
         if error.kind() == std::io::ErrorKind::WouldBlock {
             eprintln!(
-                "[bladebro] daemon already running or starting on {}",
+                "[webjitsu] daemon already running or starting on {}",
                 path.display()
             );
             return Ok(());
@@ -102,12 +102,12 @@ pub async fn run_daemon() -> Result<()> {
         return Err(error.into());
     }
     // Never steal a LIVE daemon's socket: connect to check first. Without
-    // this, a second `bladebro daemon` rebinds over the active one and
+    // this, a second `webjitsu daemon` rebinds over the active one and
     // orphans it — a ghost that keeps its Chrome but that `stop` can no
     // longer reach (and whose death later unlinks the new daemon's socket).
     if std::os::unix::net::UnixStream::connect(&path).is_ok() {
         eprintln!(
-            "[bladebro] daemon already running on {} — exiting",
+            "[webjitsu] daemon already running on {} — exiting",
             path.display()
         );
         return Ok(());
@@ -131,7 +131,7 @@ pub async fn run_daemon() -> Result<()> {
         let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600));
     }
 
-    eprintln!("[bladebro] daemon listening on {}", path.display());
+    eprintln!("[webjitsu] daemon listening on {}", path.display());
     let _ = std::fs::write(pid_path(), std::process::id().to_string());
 
     let mut browser: Option<crate::browser::Browser> = None;
@@ -161,7 +161,7 @@ pub async fn run_daemon() -> Result<()> {
             // another connection is served.
             biased;
             _ = signals.recv() => {
-                eprintln!("[bladebro] termination signal \u{2014} shutting down Chrome gracefully");
+                eprintln!("[webjitsu] termination signal \u{2014} shutting down Chrome gracefully");
                 break;
             }
             // Accept new connections.
@@ -169,7 +169,7 @@ pub async fn run_daemon() -> Result<()> {
                 let (stream, _) = match accept {
                     Ok(s) => s,
                     Err(e) => {
-                        eprintln!("[bladebro] accept error: {e}");
+                        eprintln!("[webjitsu] accept error: {e}");
                         continue;
                     }
                 };
@@ -219,7 +219,7 @@ pub async fn run_daemon() -> Result<()> {
                 // Stop command.
                 if tool == "stop" {
                     // Flush the knowledge base BEFORE acknowledging: once
-                    // `bladebro stop` returns, consent/visits/timing/block
+                    // `webjitsu stop` returns, consent/visits/timing/block
                     // knowledge must already be durable on disk.
                     if let Ok(mut kb) = knowledge.lock() {
                         kb.prune();
@@ -229,7 +229,7 @@ pub async fn run_daemon() -> Result<()> {
                     let resp_str = serde_json::to_string(&resp).unwrap_or_default();
                     let _ = reader.get_mut().write_all(resp_str.as_bytes()).await;
                     let _ = reader.get_mut().write_all(b"\n").await;
-                    eprintln!("[bladebro] daemon stopping (stop command)");
+                    eprintln!("[webjitsu] daemon stopping (stop command)");
                     break;
                 }
 
@@ -268,7 +268,7 @@ pub async fn run_daemon() -> Result<()> {
                 if need_launch {
                     if browser.is_some() {
                         eprintln!(
-                            "[bladebro] browser relaunch: {}",
+                            "[webjitsu] browser relaunch: {}",
                             if drifted { "lane/settings changed" } else { "connection lost" }
                         );
                         if let Some(b) = browser.take() {
@@ -281,7 +281,7 @@ pub async fn run_daemon() -> Result<()> {
                         // close. The launch below opens the browser the
                         // current lane/settings call for.
                         eprintln!(
-                            "[bladebro] lane/settings changed — detaching from the attached browser"
+                            "[webjitsu] lane/settings changed — detaching from the attached browser"
                         );
                         detached_attach = true;
                         page = None;
@@ -305,7 +305,7 @@ pub async fn run_daemon() -> Result<()> {
                             }
                         }
                         Err(e) => {
-                            eprintln!("[bladebro] Chrome launch failed: {e}");
+                            eprintln!("[webjitsu] Chrome launch failed: {e}");
                             let resp = json!({ "ok": false, "error": format!("Chrome launch failed: {e}") });
                             let resp_str = serde_json::to_string(&resp).unwrap_or_default();
                             let _ = reader.get_mut().write_all(resp_str.as_bytes()).await;
@@ -321,7 +321,7 @@ pub async fn run_daemon() -> Result<()> {
                     dispatch_or_shutdown(&mut signals, tool, &args, p).await
                 };
                 let Some(result) = result else {
-                    eprintln!("[bladebro] termination signal during a command \u{2014} cancelled it; shutting down Chrome gracefully");
+                    eprintln!("[webjitsu] termination signal during a command \u{2014} cancelled it; shutting down Chrome gracefully");
                     let resp_str = serde_json::to_string(&cancelled_by_signal()).unwrap_or_default();
                     let _ = reader.get_mut().write_all(resp_str.as_bytes()).await;
                     let _ = reader.get_mut().write_all(b"\n").await;
@@ -338,7 +338,7 @@ pub async fn run_daemon() -> Result<()> {
 
                 // One-line advisories for the human: a mid-session lane switch
                 // actually landed, or this daemon runs a binary that was
-                // replaced on disk (a restart is one `bladebro stop` away).
+                // replaced on disk (a restart is one `webjitsu stop` away).
                 let mut advisories: Vec<String> = Vec::new();
                 if drifted {
                     advisories.push(match (detached_attach, lane_switched, crate::realbrowser::real_lane()) {
@@ -353,7 +353,7 @@ pub async fn run_daemon() -> Result<()> {
                 if !stale_warned && crate::platform::stale_binary() {
                     stale_warned = true;
                     advisories.push(
-                        "note: this daemon runs a binary that was replaced on disk — `bladebro stop` to pick up the new build".into(),
+                        "note: this daemon runs a binary that was replaced on disk — `webjitsu stop` to pick up the new build".into(),
                     );
                 }
                 advisories.extend(crate::browser::pending_notes());
@@ -376,7 +376,7 @@ pub async fn run_daemon() -> Result<()> {
                     }),
                     Err(BladeError::Closed) => {
                         // Self-heal: relaunch and retry.
-                        eprintln!("[bladebro] browser closed during tool call, reconnecting...");
+                        eprintln!("[webjitsu] browser closed during tool call, reconnecting...");
                         if let Some(b) = browser.take() {
                             b.shutdown_gracefully().await;
                         }
@@ -417,7 +417,7 @@ pub async fn run_daemon() -> Result<()> {
                 let _ = reader.get_mut().write_all(resp_str.as_bytes()).await;
                 let _ = reader.get_mut().write_all(b"\n").await;
                 if cancelled {
-                    eprintln!("[bladebro] termination signal during a command \u{2014} cancelled it; shutting down Chrome gracefully");
+                    eprintln!("[webjitsu] termination signal during a command \u{2014} cancelled it; shutting down Chrome gracefully");
                     break;
                 }
 
@@ -428,7 +428,7 @@ pub async fn run_daemon() -> Result<()> {
                 // a visible real-browser window manually) so it never sits as
                 // a `<defunct>` zombie or holds a stale `sess-<pid>` dir.
                 if browser.as_mut().is_some_and(|b| b.has_exited()) {
-                    eprintln!("[bladebro] owned browser exited externally — cleaning up session");
+                    eprintln!("[webjitsu] owned browser exited externally — cleaning up session");
                     if let Some(b) = browser.take() {
                         b.shutdown_gracefully().await;
                     }
@@ -441,11 +441,11 @@ pub async fn run_daemon() -> Result<()> {
                     && last_activity.elapsed().as_secs() > idle_secs
                     && crate::realbrowser::should_idle_shutdown()
                 {
-                    eprintln!("[bladebro] idle timeout ({idle_secs}s), shutting down Chrome");
+                    eprintln!("[webjitsu] idle timeout ({idle_secs}s), shutting down Chrome");
                     if let Some(b) = browser.take() {
                         if let Some(ref p) = page {
                             if !crate::realbrowser::real_lane() {
-                                if let Err(e) = crate::logins::snapshot(p.cdp_ref()).await { eprintln!("[bladebro] login snapshot failed: {e}"); }
+                                if let Err(e) = crate::logins::snapshot(p.cdp_ref()).await { eprintln!("[webjitsu] login snapshot failed: {e}"); }
                             }
                         }
                         b.shutdown_gracefully().await;
@@ -461,7 +461,7 @@ pub async fn run_daemon() -> Result<()> {
                     if !crate::realbrowser::real_lane() {
                         if let Some(ref p) = page {
                             if !p.cdp_ref().is_closed() {
-                                if let Err(e) = crate::logins::snapshot(p.cdp_ref()).await { eprintln!("[bladebro] login snapshot failed: {e}"); }
+                                if let Err(e) = crate::logins::snapshot(p.cdp_ref()).await { eprintln!("[webjitsu] login snapshot failed: {e}"); }
                             }
                         }
                     }
@@ -484,7 +484,7 @@ pub async fn run_daemon() -> Result<()> {
     if let Some(ref p) = page {
         if !crate::realbrowser::real_lane() {
             if let Err(e) = crate::logins::snapshot(p.cdp_ref()).await {
-                eprintln!("[bladebro] login snapshot failed: {e}");
+                eprintln!("[webjitsu] login snapshot failed: {e}");
             }
         }
     }
@@ -504,12 +504,12 @@ pub async fn run_daemon() -> Result<()> {
         let _ = std::fs::remove_file(&path);
         let _ = std::fs::remove_file(pid_path());
     }
-    eprintln!("[bladebro] daemon stopped");
+    eprintln!("[webjitsu] daemon stopped");
     Ok(())
 }
 
 /// Run one command unless a termination signal arrives first (`None`).
-/// Cancel rather than finish: `bladebro stop` on a busy daemon and a
+/// Cancel rather than finish: `webjitsu stop` on a busy daemon and a
 /// service manager both escalate to SIGKILL after a short grace, and a long
 /// command (a navigate to a slow server) would outlive it, forfeiting the
 /// graceful Chrome flush the signal is meant to trigger.
@@ -587,7 +587,7 @@ pub(super) const MAX_REQUEST_BYTES: usize = 8 * 1024 * 1024;
 
 /// Settings a command sets through its environment that the DAEMON reads
 /// from its own — inherited from whichever command auto-started it, or the
-/// shell that ran `bladebro daemon`: the browser binary, network identity,
+/// shell that ran `webjitsu daemon`: the browser binary, network identity,
 /// fingerprint, profile, and how results are shaped. A command that sets
 /// one differently would otherwise run silently with the daemon's value.
 /// Not listed: where the daemon lives (BLADE_HOME/XDG_*: another value is
@@ -649,7 +649,7 @@ pub(super) fn daemon_request(tool: &str, args: &Value) -> Value {
 /// Why this daemon must not serve `req` (`None` = serve it): the command
 /// resolved another lane, or set a daemon-scoped variable to a value the
 /// daemon does not run with. Without this the daemon ran every command in
-/// ITS lane — `BLADE_LANE=agent bladebro nav bank.com` after `rb on` drove
+/// ITS lane — `BLADE_LANE=agent webjitsu nav bank.com` after `rb on` drove
 /// the user's real browser. A setting the command does not set is the
 /// daemon's (documented daemon-wide behavior); a request without the
 /// fields (an older CLI) is served as before. Values are compared, never
@@ -683,7 +683,7 @@ fn settings_mismatch(
     }
     Some(format!(
         "refused: this command's settings differ from the running daemon's — {}. Nothing was run. \
-         The daemon keeps the settings it was started with: run 'bladebro stop' and retry to \
+         The daemon keeps the settings it was started with: run 'webjitsu stop' and retry to \
          restart it with this command's, or add --no-daemon to run just this command in its own \
          browser.",
         differ.join(", ")
@@ -697,7 +697,7 @@ fn settings_mismatch(
 /// is RUNNING, and the login snapshots (periodic, idle, shutdown) and the
 /// idle hum consult it until a served command relaunches. A refusal that
 /// switched it relabelled a live real-lane session as agent, so the
-/// `bladebro stop` the refusal recommends snapshotted the user's own
+/// `webjitsu stop` the refusal recommends snapshotted the user's own
 /// cookies into the agent's logins.json.
 #[cfg(unix)]
 fn refusal(req: &Value) -> Option<String> {
@@ -731,15 +731,15 @@ fn process_alive(pid: i32) -> bool {
     pid > 1 && crate::platform::process_alive(pid as u32)
 }
 
-/// Verify the pid is actually a bladebro process before killing it — pids
+/// Verify the pid is actually a webjitsu process before killing it — pids
 /// get recycled and a blind kill could hit an innocent process. macOS uses
 /// ps executable identity; an unreadable identity never authorizes a kill.
 #[cfg(unix)]
-fn looks_like_bladebro(pid: i32) -> bool {
+fn looks_like_webjitsu(pid: i32) -> bool {
     #[cfg(any(target_os = "linux", target_os = "android"))]
     {
         std::fs::read_to_string(format!("/proc/{pid}/comm"))
-            .is_ok_and(|comm| comm.trim() == "bladebro")
+            .is_ok_and(|comm| comm.trim() == "webjitsu")
     }
     #[cfg(not(any(target_os = "linux", target_os = "android")))]
     {
@@ -749,7 +749,7 @@ fn looks_like_bladebro(pid: i32) -> bool {
             .is_ok_and(|output| {
                 std::path::Path::new(String::from_utf8_lossy(&output.stdout).trim())
                     .file_name()
-                    .is_some_and(|name| name == "bladebro")
+                    .is_some_and(|name| name == "webjitsu")
             })
     }
 }
@@ -826,7 +826,7 @@ pub async fn stop_daemon() -> Result<String> {
     // No socket, or no answer: a daemon process may still linger — check
     // the pid file.
     if let Some(pid) = read_pid_file() {
-        if process_alive(pid) && looks_like_bladebro(pid) {
+        if process_alive(pid) && looks_like_webjitsu(pid) {
             unsafe {
                 libc::kill(pid, libc::SIGTERM);
             }
@@ -857,11 +857,11 @@ pub async fn stop_daemon() -> Result<String> {
     }
 
     // Something live holds the socket (it accepted our request) but no
-    // live bladebro is on record: never unlink a live socket or claim
+    // live webjitsu is on record: never unlink a live socket or claim
     // "not running".
     if unanswered {
         return Err(BladeError::Other(format!(
-            "the daemon on {} did not answer within {STOP_ANSWER_SECS}s and the pid file names no live bladebro process, so it was left running — find it with `pgrep -ax bladebro`, terminate it, then run `bladebro stop` again",
+            "the daemon on {} did not answer within {STOP_ANSWER_SECS}s and the pid file names no live webjitsu process, so it was left running — find it with `pgrep -ax webjitsu`, terminate it, then run `webjitsu stop` again",
             path.display()
         )));
     }
@@ -893,7 +893,7 @@ mod tests {
             "{why}"
         );
         assert!(
-            why.contains("bladebro stop") && why.contains("--no-daemon"),
+            why.contains("webjitsu stop") && why.contains("--no-daemon"),
             "{why}"
         );
         assert!(check(json!({"lane": "real", "env": {}}), false).is_some());

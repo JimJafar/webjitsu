@@ -6,10 +6,10 @@
 //! that the discovery layer used by `state`/`see`/`act` (via `run_connected`)
 //! targets the exact `host:port` that `--port` selects.
 
-use bladebro::cdp;
 use serde_json::json;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
+use webjitsu::cdp;
 
 /// Spawn a minimal Chrome-style HTTP debug endpoint. It serves `/json` with a
 /// single page target whose id/url/ws-url all carry `marker`, so the two

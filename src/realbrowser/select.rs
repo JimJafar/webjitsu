@@ -131,7 +131,7 @@ pub fn resolve_selection(cfg: &Config) -> Result<(BrowserSpec, ProfileInfo)> {
             }
         } else {
             return Err(BladeError::Other(
-                "no Chromium-family browser found. Install one (Chromium, Chrome, Brave, Helium, Arc, Edge, Vivaldi, Opera, Thorium) or set a custom binary via `bladebro rb use --binary <path>`.".into(),
+                "no Chromium-family browser found. Install one (Chromium, Chrome, Brave, Helium, Arc, Edge, Vivaldi, Opera, Thorium) or set a custom binary via `webjitsu rb use --binary <path>`.".into(),
             ));
         }
     } else {
@@ -224,7 +224,7 @@ pub fn resolve_selection(cfg: &Config) -> Result<(BrowserSpec, ProfileInfo)> {
             } else {
                 BladeError::Other(format!(
                     "profile root {} does not exist yet — launch {} once so it creates one, \
-                     or point `bladebro rb profile <absolute path>` at an existing profile",
+                     or point `webjitsu rb profile <absolute path>` at an existing profile",
                     spec.profile_root.display(),
                     spec.name
                 ))
@@ -253,7 +253,7 @@ pub(super) fn pick_recency_index(values: &[u64]) -> Option<usize> {
 /// session (`session_live` — a page attached, owned or not) whose lane or
 /// launch inputs changed since its launch must be switched at the next
 /// action. Attach sessions have no owned browser but are still driven by
-/// bladebro — `rb off` must detach them, not keep steering the user's browser.
+/// webjitsu — `rb off` must detach them, not keep steering the user's browser.
 /// Settled sessions (nothing changed) and sessions with no live page are
 /// exempt, so agent-lane sessions never pay a pointless relaunch.
 pub fn session_drifted(
@@ -332,7 +332,7 @@ pub fn ensure_import(spec: &BrowserSpec, profile: &ProfileInfo) -> Result<Import
         eprintln!(
             "{} your browser ({owner}) is open — importing its profile now. Very recent \
              in-memory cookie writes may not have flushed to disk yet; the source is never \
-             written to. Close it and run `bladebro rb refresh` for a guaranteed clean snapshot.",
+             written to. Close it and run `webjitsu rb refresh` for a guaranteed clean snapshot.",
             crate::ui::err::dim("[realbrowser]")
         );
     }
@@ -355,7 +355,7 @@ pub fn ensure_import(spec: &BrowserSpec, profile: &ProfileInfo) -> Result<Import
         let joined = stats.failed_critical.join(", ");
         let msg = format!(
             "real-browser clone could not copy locked profile file(s): {joined}. \
-             Logins/cookies may be missing — close {} and run `bladebro rb refresh`, \
+             Logins/cookies may be missing — close {} and run `webjitsu rb refresh`, \
              or attach via `chrome://inspect#remote-debugging` / `--remote-debugging-port`.",
             spec.name
         );

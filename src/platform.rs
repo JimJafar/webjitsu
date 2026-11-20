@@ -64,7 +64,7 @@ pub fn home_dir() -> PathBuf {
     }
 }
 
-/// The Bladebro data directory. Resolution order:
+/// The WebJitsu data directory. Resolution order:
 /// 1. `BLADE_HOME` (explicit override, highest priority).
 /// 2. Unix: `$XDG_STATE_HOME/blade` when `XDG_STATE_HOME` is set.
 /// 3. Unix: `$HOME/.local/state/blade` when that parent exists or can be
@@ -74,7 +74,7 @@ pub fn home_dir() -> PathBuf {
 ///
 /// Migration-free upgrade: when a DEFAULT resolution (cases 2-4, not an
 /// explicit `BLADE_HOME`) lands somewhere other than the legacy dir while
-/// `~/.blade` already holds Bladebro state, the legacy dir wins. An
+/// `~/.blade` already holds WebJitsu state, the legacy dir wins. An
 /// upgraded install must never silently split its state in two.
 pub fn blade_dir() -> PathBuf {
     let home = home_dir();
@@ -138,7 +138,7 @@ fn resolve_blade_dir(
     }
 }
 
-/// Does `~/.blade` hold Bladebro state? (Any known artifact, not just a
+/// Does `~/.blade` hold WebJitsu state? (Any known artifact, not just a
 /// directory that happens to exist.)
 fn dir_has_state(legacy: &std::path::Path) -> bool {
     if !legacy.is_dir() {
@@ -481,7 +481,7 @@ pub fn validate_write_path(path: &std::path::Path) -> Result<(), String> {
 /// here is delivered to the page — an untrusted origin — so this is a
 /// disclosure sink, not a neutral file picker: a prompt-injected page
 /// steers the agent toward exactly the credential locations the write path
-/// blocks, plus bladebro's own cleartext credential stores under the data
+/// blocks, plus webjitsu's own cleartext credential stores under the data
 /// dir (logins.json, sessions/, realbrowser templates). The artifacts dir
 /// stays uploadable — it is the sanctioned file-exchange zone.
 ///
@@ -601,7 +601,7 @@ pub fn validate_upload_path_at(
         }
     }
 
-    // Bladebro's own data stores — the complete session jar, saved
+    // WebJitsu's own data stores — the complete session jar, saved
     // sessions, profile templates, the rb clone of the user's real profile.
     // The artifacts dir is the sanctioned exchange zone and stays
     // uploadable.
@@ -626,7 +626,7 @@ pub fn validate_upload_path_at(
         resolved.starts_with(&legacy_c) && !resolved.starts_with(legacy_c.join("artifacts"));
     if (in_data && !in_artifacts) || in_legacy {
         return Err(format!(
-            "blocked: uploading from bladebro's data directory is not allowed ({} — use the artifacts dir)",
+            "blocked: uploading from webjitsu's data directory is not allowed ({} — use the artifacts dir)",
             resolved.display()
         ));
     }
@@ -1219,7 +1219,7 @@ pub fn isolate_owned_child(cmd: &mut std::process::Command) {
 /// when this process dies, whatever kills it.
 ///
 /// Both halves are needed. Out of our group, the terminal's Ctrl-C to the
-/// foreground job no longer kills Xvfb while bladebro is still closing the
+/// foreground job no longer kills Xvfb while webjitsu is still closing the
 /// browser (Chrome lost its display first, so the graceful close that lets it
 /// flush storage never happened). But out of our group a SIGKILL to it
 /// (`timeout -s KILL`, a harness's killpg, a cancelled CI job) no longer
@@ -1267,7 +1267,7 @@ pub fn spawn_tied_to_process(
         if spawner.is_none() {
             let (jobs, queue) = mpsc::channel::<Job>();
             std::thread::Builder::new()
-                .name("bladebro-spawner".into())
+                .name("webjitsu-spawner".into())
                 .spawn(move || {
                     for (mut cmd, reply) in queue {
                         let _ = reply.send(cmd.spawn());
@@ -1277,21 +1277,21 @@ pub fn spawn_tied_to_process(
         }
         if let Some(jobs) = spawner.as_ref() {
             jobs.send((cmd, reply))
-                .map_err(|_| std::io::Error::other("bladebro spawner thread is gone"))?;
+                .map_err(|_| std::io::Error::other("webjitsu spawner thread is gone"))?;
         }
     }
     result
         .recv()
-        .map_err(|_| std::io::Error::other("bladebro spawner thread is gone"))?
+        .map_err(|_| std::io::Error::other("webjitsu spawner thread is gone"))?
 }
 
 /// Termination signals for a process that owns its browser in-process (the
 /// one-shot CLI, `probe`/`targets`/`audit`): SIGTERM, SIGINT and SIGHUP on
 /// Unix, Ctrl+C on Windows — the set the MCP server shuts down on. Without
-/// a handler the default action ended bladebro without ever closing the
+/// a handler the default action ended webjitsu without ever closing the
 /// browser, which runs in its own process group (`isolate_owned_child`): a
 /// `timeout` SIGTERM orphaned it and Xvfb, and a Ctrl-C to the job's group
-/// took Xvfb down with bladebro and left Chrome to die on losing its display,
+/// took Xvfb down with webjitsu and left Chrome to die on losing its display,
 /// unflushed (or orphaned it where there is no Xvfb).
 ///
 /// Listening starts in [`TerminationSignal::listen`]. From then on these
@@ -2046,7 +2046,7 @@ mod write_path_tests {
         std::os::unix::fs::symlink("/etc", &link).unwrap();
         // Spelled through the symlink, this resolves into /etc — blocked.
         // The pre-fix check only saw the harmless-looking spelling.
-        assert!(validate_write_path(&link.join("bladebro-test")).is_err());
+        assert!(validate_write_path(&link.join("webjitsu-test")).is_err());
         // A plain path under the same dir still passes.
         assert!(validate_write_path(&dir.join("ok.txt")).is_ok());
         // The platform's REAL spelling of a blocked directory is blocked
@@ -2054,7 +2054,7 @@ mod write_path_tests {
         // only knew the literal spelling let this through (CI red,
         // 2026-09-29).
         let real_etc = std::fs::canonicalize("/etc").expect("canonicalize /etc");
-        assert!(validate_write_path(&real_etc.join("bladebro-test")).is_err());
+        assert!(validate_write_path(&real_etc.join("webjitsu-test")).is_err());
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

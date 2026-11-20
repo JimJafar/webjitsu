@@ -13,13 +13,13 @@ use serde_json::Value;
 
 fn home(tag: &str) -> PathBuf {
     let dir =
-        std::env::temp_dir().join(format!("bladebro-cli-surface-{tag}-{}", std::process::id()));
+        std::env::temp_dir().join(format!("webjitsu-cli-surface-{tag}-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
 
 fn command(home: &PathBuf) -> Command {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bladebro"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_webjitsu"));
     cmd.env("BLADE_HOME", home)
         .env("BLADE_LANE", "agent")
         .env("BLADE_NO_UPDATE_CHECK", "1")
@@ -31,7 +31,7 @@ fn command(home: &PathBuf) -> Command {
     cmd
 }
 
-fn bladebro(home: &PathBuf, args: &[&str]) -> Output {
+fn webjitsu(home: &PathBuf, args: &[&str]) -> Output {
     command(home).args(args).output().unwrap()
 }
 
@@ -47,7 +47,7 @@ fn stdout(out: &Output) -> String {
 fn help_is_routed_to_the_named_command() {
     let home = home("help");
     let manual = "COMMANDS";
-    let act = "bladebro act — interact with the page";
+    let act = "webjitsu act — interact with the page";
     for args in [
         &["act", "--help"][..],
         &["act", "-h"],
@@ -55,7 +55,7 @@ fn help_is_routed_to_the_named_command() {
         &["help", "act"],
         &["--help", "act"],
     ] {
-        let out = bladebro(&home, args);
+        let out = webjitsu(&home, args);
         let text = stdout(&out);
         assert!(out.status.success(), "{args:?}: {out:?}");
         assert!(
@@ -64,7 +64,7 @@ fn help_is_routed_to_the_named_command() {
         );
     }
 
-    let out = bladebro(&home, &["act", "--help", "--json"]);
+    let out = webjitsu(&home, &["act", "--help", "--json"]);
     assert!(out.status.success(), "{out:?}");
     let v: Value = serde_json::from_slice(&out.stdout).expect("--help --json is one JSON object");
     assert_eq!(v["command"], "act");
@@ -73,33 +73,33 @@ fn help_is_routed_to_the_named_command() {
     // Commands main.rs owns answer with their help — the handler must not
     // run (`mcp --help` would start a server, `-u --help` would update).
     for (args, marker) in [
-        (&["mcp", "--help"][..], "bladebro mcp — MCP server"),
+        (&["mcp", "--help"][..], "webjitsu mcp — MCP server"),
         // FORK (FORK.md): the marker is this build's title for the removed
         // command — what is being asserted is unchanged, that `--help` routes to
         // the help text and the handler (an actual self-update) never runs.
         (
             &["-u", "--help"],
-            "bladebro -u / update — REMOVED in this build",
+            "webjitsu -u / update — REMOVED in this build",
         ),
-        (&["audit", "-h"], "bladebro audit — stealth audit"),
+        (&["audit", "-h"], "webjitsu audit — stealth audit"),
     ] {
-        let out = bladebro(&home, args);
+        let out = webjitsu(&home, args);
         assert!(out.status.success(), "{args:?}: {out:?}");
         assert!(stdout(&out).contains(marker), "{args:?}: {}", stdout(&out));
     }
 
     // Before any command, and for `help` itself, it stays the manual.
     for args in [&["--help"][..], &["-h"], &["help", "--help"]] {
-        let out = bladebro(&home, args);
+        let out = webjitsu(&home, args);
         assert!(out.status.success(), "{args:?}: {out:?}");
         assert!(stdout(&out).contains(manual), "{args:?}: {}", stdout(&out));
     }
-    let out = bladebro(&home, &["--help", "--json"]);
+    let out = webjitsu(&home, &["--help", "--json"]);
     let v: Value = serde_json::from_slice(&out.stdout).expect("--help --json is one JSON object");
     assert!(v["commands"]["act"].is_object());
 
     // An unknown command is not a help request for the manual.
-    let out = bladebro(&home, &["nva", "--help"]);
+    let out = webjitsu(&home, &["nva", "--help"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");
 
     let _ = std::fs::remove_dir_all(&home);
@@ -119,7 +119,7 @@ fn json_errors_before_dispatch_are_one_object_on_stdout() {
         ),
         (&["--json", "nav", "x", "--host"], "--host needs a value"),
     ] {
-        let out = bladebro(&home, args);
+        let out = webjitsu(&home, args);
         assert_eq!(out.status.code(), Some(2), "{args:?}: {out:?}");
         let text = stdout(&out);
         let lines: Vec<&str> = text.lines().collect();
@@ -133,7 +133,7 @@ fn json_errors_before_dispatch_are_one_object_on_stdout() {
         );
     }
     // Without --json, stdout stays empty: the human error is on stderr.
-    let out = bladebro(&home, &["nva"]);
+    let out = webjitsu(&home, &["nva"]);
     assert_eq!(out.status.code(), Some(2));
     assert!(out.stdout.is_empty(), "{out:?}");
     assert!(String::from_utf8_lossy(&out.stderr).contains("unknown command"));
@@ -206,7 +206,7 @@ fn open_pty() -> Option<(std::fs::File, std::fs::File)> {
 }
 
 /// Styling is decided per stream. stderr used to follow STDOUT's terminal
-/// state: `bladebro nav x 2>err.log` on a terminal wrote ANSI codes into
+/// state: `webjitsu nav x 2>err.log` on a terminal wrote ANSI codes into
 /// the log, while a terminal stderr behind `| jq` stayed plain.
 #[cfg(target_os = "linux")]
 #[test]

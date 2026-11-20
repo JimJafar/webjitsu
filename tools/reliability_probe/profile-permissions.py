@@ -3,7 +3,7 @@
 pre-plants are never adopted, entered, or mutated.
 
 Contract 2026-10-07: BLADE_FRESH=1 sessions land in an unpredictable
-`bladebro-chrome-<entropy>` dir created with exclusive mkdir — a pre-plant
+`webjitsu-chrome-<entropy>` dir created with exclusive mkdir — a pre-plant
 at any GUESSED name (including the pre-4.2.0 pid-based scheme) can never be
 hit, and a name collision fails creation and retries instead of adopting.
 The deterministic pockets that remain under attacker influence are the
@@ -31,7 +31,7 @@ import threading
 
 if os.name != 'posix':
     raise SystemExit('This permission probe requires Unix; Windows uses profile ACLs.')
-binary = os.environ.get('BLADEBRO', str(Path(__file__).resolve().parents[2] / 'target/release/bladebro'))
+binary = os.environ.get('WEBJITSU', str(Path(__file__).resolve().parents[2] / 'target/release/webjitsu'))
 
 
 class Fixture(http.server.BaseHTTPRequestHandler):
@@ -77,7 +77,7 @@ def close_mcp(proc):
 
 
 def fresh_dirs():
-    return {p.name for p in Path(tempfile.gettempdir()).glob('bladebro-chrome-*')}
+    return {p.name for p in Path(tempfile.gettempdir()).glob('webjitsu-chrome-*')}
 
 
 def base_env(blade_home):
@@ -102,7 +102,7 @@ with tempfile.TemporaryDirectory(prefix='blade-profile-probe-') as tmp:
                                     stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
             # The pid name is a GUESS now (the real name is entropy-based):
             # plant it exactly where the old scheme would have looked.
-            profile = Path(tempfile.gettempdir()) / f'bladebro-chrome-{proc.pid}'
+            profile = Path(tempfile.gettempdir()) / f'webjitsu-chrome-{proc.pid}'
             assert not profile.exists(), 'test cannot adopt an existing directory'
             target = root / f'symlink-target-{kind}'
             if kind == 'symlink':

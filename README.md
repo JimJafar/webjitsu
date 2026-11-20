@@ -1,167 +1,136 @@
-<p align="center">
-  <img src="Assets/readme/masthead.webp" width="100%" alt="Bladebro in cream letterpress beside a katana, a Chromium window, and a black and red city at night">
-</p>
+# WebJitsu
 
-<h1 align="center"><img src="Assets/readme/monogram.webp" width="30" height="30" alt="B">ladebro</h1>
+**A fork of [Bladebro](https://github.com/dondai44423/bladebro) with the real-browser lane removed**, so an agent you point at the web can never act as *you*.
 
-<p align="center"><strong>Drive a real browser from your agent or terminal.</strong><br>
-Click, fill forms, read pages, and keep a browser session across calls. Five MCP tools in one Rust binary.</p>
+Everything else is upstream's: a Rust binary that drives a Chromium-family browser over CDP and exposes it as five MCP tools — `act`, `see`, `state`, `run`, `vision` — with a persistent Live Page Model, delta-first output for token efficiency, and the stealth layer.
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/bladebro"><img src="https://img.shields.io/npm/v/bladebro?style=flat-square&amp;labelColor=151518&amp;color=d52932" alt="npm release"></a>
-  <a href="https://github.com/dondai44423/bladebro/stargazers"><img src="https://img.shields.io/github/stars/dondai44423/bladebro?style=flat-square&amp;labelColor=151518&amp;color=d52932" alt="GitHub stars"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-d52932?style=flat-square&amp;labelColor=151518" alt="Apache 2.0 license"></a>
-</p>
+- Fork of `dondai44423/bladebro` v4.8.2 (`bfdb5c3`), Apache-2.0. Upstream's authorship and license are unchanged.
+- Full gate-by-gate record: **[FORK.md](FORK.md)**.
+- Not published to npm. This fork is built from source (see [Install](#install)).
 
-<p align="center">
-  <a href="#quickstart">Quickstart</a> ·
-  <a href="#the-five-tools">Tools</a> ·
-  <a href="#browser-modes">Browser modes</a> ·
-  <a href="#how-it-works">Architecture</a> ·
-  <a href="#docs">Docs</a> ·
-  <strong><a href="#sponsors">Sponsor</a></strong>
-</p>
+## Why it's forked
 
-> **This repository is a fork.** The real-browser lane (`bladebro rb`: driving
-> your own Chromium, enumerating its profiles, cloning its cookies and logins, or
-> attaching to a running browser) is **removed** here, along with self-update, so
-> an update cannot quietly restore it. Everything else — the agent browser, the
-> five tools, stealth, site adapters — is upstream's.
-> **[FORK.md](FORK.md)** lists every gate, how to build, and how to pull from
-> upstream. `npm install -g bladebro` installs **upstream's** build, lane
-> included: build this tree (`cargo build --release`, or `scripts/fork-install.sh`)
-> and point your MCP client at that binary.
+Upstream's `bladebro rb` ("real browser") lane lets the agent drive **your own** Chromium:
 
-## Quickstart
+| `rb` mechanism | What upstream does |
+|---|---|
+| `clone` (default) | Copies your profile into a Bladebro-owned clone, then "automatically refreshes whenever your real browser writes newer logins, cookies, or storage" |
+| `profile` | Launches your browser on your **live** profile directory |
+| `attach` | Connects to a browser you already started, through its debug endpoint |
 
-Install Chrome or Chromium on the machine running Bladebro. Then open and read a page from the terminal.
+Upstream is candid about it: *"Real-browser mode can act in authenticated sessions. Choose the profile and account you want the agent to use before handing it control."*
+
+That is the whole problem for an agent-driven browser. A real profile is the union of every session you are logged into — mail, banking, source control, your employer's internal tools. Meanwhile the agent reads untrusted page content as a matter of course, and page content is exactly what steers an agent. Put those in one process and any page you visit is in a position to make the agent act as you: send the message, change the setting, export the data, buy the thing. No prompt or policy inside the tool can arbitrate that, because the capability and the exposure are the same feature.
+
+The clone has a second, quieter cost. Chrome encrypts its cookie store at rest; a copied profile does not inherit that, so a clone — kept current by auto-refresh — is a bag of plaintext session tokens on disk, and the OS account is the only thing guarding it.
+
+So the lane is deleted rather than defaulted off: the tool cannot enter it, and you cannot misconfigure your way back in.
+
+## What has been changed
+
+| Change | Effect |
+|---|---|
+| **Real-browser lane removed** | Every `webjitsu rb` subcommand returns `blocked:`. The lane cannot be selected by config or by `BLADE_LANE=real`; a profile cannot be enumerated, copied, launched, or attached. `rb status` and `rb off` still exit 0 and report the truth, so probes and setup scripts keep working |
+| **Self-update and rollback removed** | `update`, `-u`, `--rollback` return `blocked:`, and the release registry is never contacted. Left in place, `bladebro update` would download upstream's binary, swap it into this path, and silently restore the lane — the fork would have lasted until the next update. `webjitsu -v` prints `fork no-rb` instead of nagging |
+| **Renamed to WebJitsu** | Repo, crate, binary, npm package names (`webjitsu`, `webjitsu-linux-x64`, …), CLI text and docs. Upstream's npm names are not claimed: nothing here is published, and a different build under the same name is how supply-chain confusion starts |
+| **npm publishing workflow deleted** | `.github/workflows/release.yml` went with it: a fork has no business publishing these packages, and its CI cannot attest to upstream's provenance |
+| **Source-only install** | `cargo build --release`, or `scripts/fork-install.sh`, which installs outside npm and then verifies its own gates |
+| **Pi extension resolves a local build** | Upstream found the binary only through optional npm platform packages. `pi install ./npm/webjitsu` loads the package in place without installing dependencies, so that route is empty here; resolution is now `WEBJITSU_BIN` → a build in this source tree → `~/.local/bin/webjitsu` → the platform package |
+
+**Unchanged:** the isolated agent browser, all five tools and their schemas, the stealth and anti-detection layer, site adapters (Reddit/X/HN), `state save|load` for the agent browser's own sessions, the daemon, downloads, artifacts, `doctor`, and every upstream behaviour that isn't the lane.
+
+**Not fixed by this fork** — read [FORK.md](FORK.md#known-gaps) before assuming otherwise: `--host`/`--port` can still attach to a browser you armed with a debug endpoint; `logins.json` stores the *agent* browser's cookies as plaintext; the stealth layer's ToS and account-ban exposure is yours; and nothing here stops a page from prompt-injecting an agent into leaking what the agent can see.
+
+## Install
+
+Chrome or Chromium must be installed on the machine running WebJitsu.
 
 ```sh
-npm install -g bladebro
-bladebro nav https://example.com
-bladebro see content
-bladebro stop
+git clone https://github.com/JimJafar/webjitsu.git
+cd webjitsu
+cargo build --release            # binary: target/release/webjitsu
+./scripts/fork-install.sh        # optional: installs to ~/.local/bin/webjitsu
 ```
 
-The first browser command starts a local daemon. Later calls use the same tabs and page state until you stop it. Run `bladebro doctor` if Chrome or its display cannot start. Linux, macOS, and Windows are available as [prebuilt binaries](docs/setup.md#prebuilt-binaries).
+`scripts/fork-install.sh` builds, installs, then **proves the gates**: it fails if `-v` doesn't report `fork no-rb`, or if `rb use` succeeds. So a fork that had silently reverted cannot install looking like upstream.
+
+### From the terminal
+
+```sh
+webjitsu nav https://example.com
+webjitsu see content
+webjitsu stop
+```
+
+The first browser command starts a local daemon; later calls reuse the same tabs and page state until you stop it. `webjitsu doctor` diagnoses Chrome and the display.
 
 ### Connect an agent
 
-Add this stdio server to your MCP client. Restart the client or start a new session after saving.
+Point your MCP client at the binary you built — not at `npx webjitsu`, which does not exist:
 
 ```json
 {
   "mcpServers": {
-    "bladebro": {
-      "command": "bladebro",
-      "args": ["mcp"]
-    }
+    "webjitsu": { "command": "/home/you/.local/bin/webjitsu", "args": ["mcp"] }
   }
 }
 ```
 
-The schema comes from the binary. In the shell, `bladebro help --json` includes the same tool definitions plus CLI usage and exit codes. [Pi, DeepSeek Harness, and Hermes setup](docs/setup.md#agent-integrations).
+### Install as a Pi extension
 
-### From source
+```sh
+pi install ./npm/webjitsu
+```
 
-For a source or portable install, see [the build instructions](docs/setup.md#from-source) or [download a prebuilt binary](docs/setup.md#prebuilt-binaries).
+That registers the five tools in pi. The extension finds the binary in this order: `WEBJITSU_BIN`, a build in this source tree (`target/release`, then `target/gate`), `~/.local/bin/webjitsu`, then the optional platform package. If you run it from somewhere else, set the override:
+
+```sh
+export WEBJITSU_BIN=$HOME/.local/bin/webjitsu
+```
 
 ## The five tools
 
-<p align="center">
-  <img src="Assets/readme/tools.webp" width="100%" alt="Five noir icons for act, see, state, run, and vision">
-</p>
-
-| Tool | Use it to |
+| Tool | What it does |
 |---|---|
-| [`act`](docs/tools.md#act) | Navigate, click, type, fill, scroll, read a control, or handle files. Input returns a verdict and page changes. |
-| [`see`](docs/tools.md#see) | Inspect interactive elements, read Markdown or headings, find text, or extract structured records. |
-| [`state`](docs/tools.md#state) | Manage tabs, cookies, storage, saved sessions, and resource blocking. |
-| [`run`](docs/tools.md#run) | Execute a plan with reads, actions, branches, and bounded loops in one call. |
-| [`vision`](docs/tools.md#vision) | Capture a PNG, optionally marked with element references. |
+| `act` | Navigate and interact: click, type, fill, select, press, scroll, upload, download, wait, dialog, eval, extract, collect, paginate, batch, pdf — returns a verified verdict plus a delta |
+| `see` | Read without acting: `model` (elements with refs), `content` (Markdown), `outline`, `extract` (auto/links/forms/json), `find`, `changes`, console and network logs, paged artifacts |
+| `state` | Cookies, localStorage, sessionStorage, tabs, and the agent browser's own `save` / `load` / `compress` / `block` |
+| `run` | Batch steps with `if`/`while` branching and inline reads |
+| `vision` | Screenshot to a file, with optional element marks |
 
-A typical loop is `see` → `act` → inspect the result. Use a reference like `e5`, a selector, a label, or visible text. If several controls match equally well, Bladebro returns the candidates so the caller can choose. Use the page model for ordinary reading and `vision` when layout matters.
-
-```sh
-bladebro nav https://example.com
-bladebro see model
-bladebro see outline
-bladebro see extract links --json
-bladebro vision --marks
-bladebro stop
-```
-
-[Action examples, plans, and result formats](docs/tools.md)
-
-## Browser modes
-
-<p align="center">
-  <img src="Assets/readme/browser-modes.webp" width="100%" alt="An isolated browser window on the left and a desktop browser with personal tabs on the right">
-</p>
-
-| Mode | Profile and ownership |
-|---|---|
-| **Agent browser** · default | Bladebro launches and owns Chromium with a dedicated profile. This suits a separate browsing workspace. |
-| **Your browser** · `bladebro rb on` | Use an installed Chromium-family browser and selected profile. Auto mode attaches to an available debug endpoint or imports a copy. The driver keeps its page model and actions while page injection is off. |
-
-Start with the agent browser for a clean workspace. Use real-browser mode when a task depends on your browser setup or authenticated state. Actions in a signed-in profile can affect your account.
-
-`bladebro rb status` shows which browser and profile are selected. `bladebro rb pause` hands input back to you, and `bladebro rb off` switches back to the agent browser. Browser audio is muted by default across both lanes; run `bladebro audio on` to opt in to sound output. [Profiles, attachment, and ownership](docs/browser-modes.md).
+`webjitsu help --json` emits the same schemas the MCP server serves.
 
 ## How it works
 
-**Agent or CLI → Bladebro → Chromium DevTools Protocol → live browser.**
+One Rust binary owns a daemon that keeps Chrome alive between calls, so tabs, refs and page state persist. `see` builds a Live Page Model with stable element refs that self-heal on the page; `act` verifies its own result by reading the page back, and marks an unknown mutation `degraded:true` instead of claiming success. Stealth is layered: CDP protocol choices, User-Agent and Client Hints, native-`toString` masking, canvas/audio noise seeded per install, WebRTC leak prevention, Bezier mouse paths and log-normal typing cadence, headful on a virtual display. [Architecture](docs/architecture.md) · [Browser modes](docs/browser-modes.md) · [Stealth bench](STEALTH_BENCH.md).
 
-- **A model that stays with the page.** Bladebro builds a structural view from the live DOM. References can survive re-renders when the element still matches. Get fresh references after navigation or a tab switch.
-- **Small responses during interaction.** Actions normally return a verdict and the delta. Use `see content` for Markdown, `see outline` for headings, or `see extract` for records. Large reads expose a file and paging information.
-- **Action outcomes carry evidence.** A click or submit dispatches once. After a disconnect, an unknown mutation outcome asks you to inspect the destination before retrying.
-- **One local driver.** MCP and CLI share the same handlers. Chromium supplies the live browser, and the Rust binary handles transport, input, perception, and session state.
+The browser it drives is a dedicated profile under the WebJitsu data directory (`~/.blade`, or `BLADE_HOME`). It has no view of your real browser, and your real browser has no view of it.
 
-[Architecture and source map](docs/architecture.md) · [Platform and browser verification](SUPPORT-MATRIX.md) · [Recorded benchmark and methodology](STEALTH_BENCH.md)
+## Updating from upstream
+
+```sh
+git fetch upstream --tags
+git merge upstream/<tag>
+grep -rn "fork::" src/     # every gate must survive
+cargo test --profile gate
+```
+
+Details, the gate table, and a host-dependent test caveat: [FORK.md](FORK.md).
 
 ## Docs
 
 | Guide | Go here for |
 |---|---|
-| [Setup](docs/setup.md) | Prebuilts, source builds, MCP, Pi, DeepSeek Harness, Hermes, and updates |
-| [Tools](docs/tools.md) | Syntax, addressing, tab and file operations, plans, and JSON output |
-| [Browser modes](docs/browser-modes.md) | Separate profiles, cloning, attaching, and using your own browser |
-| [Configuration](docs/configuration.md) | Browser discovery, storage, proxy setup, Linux displays, and troubleshooting |
-| [Architecture](docs/architecture.md) | Live Page Model, stable refs, recovery, and source layout |
-| [Support matrix](SUPPORT-MATRIX.md) | What was tested and on which systems |
-| [Changelog](CHANGELOG.md) | Released behavior and fixes |
+| [FORK.md](FORK.md) | Why it's forked, every gate, re-enabling a removed feature |
+| [Setup](docs/setup.md) | Source builds, MCP, Pi, DSH, Hermes, displays |
+| [Tools](docs/tools.md) | Syntax, addressing, tabs and files, plans, JSON output |
+| [Browser modes](docs/browser-modes.md) | Profiles, storage options, pause/idle (its `rb` sections describe upstream, not this fork) |
+| [Configuration](docs/configuration.md) | Discovery, proxies, Linux displays, troubleshooting |
+| [Architecture](docs/architecture.md) | Live Page Model, stable refs, recovery, source layout |
+| [Support matrix](SUPPORT-MATRIX.md) | What was tested, on which systems |
 
-### Limits
+## Upstream and license
 
-Bladebro drives Chromium-family browsers. Cross-origin iframe content, extensions, and session video recording are outside the supported tool surface. Use `vision` for screenshots. Interactive challenges can stop a task with a `blocked:` verdict. The platform packages cover five targets, with differing levels of live verification. [Support matrix](SUPPORT-MATRIX.md).
+WebJitsu is a fork of **[Bladebro](https://github.com/dondai44423/bladebro)** by Bishesh Bhandari, used under Apache-2.0 ([LICENSE](LICENSE)); the modified files are recorded in [FORK.md](FORK.md) per §4(b).
 
-<a name="-sponsors"></a>
-
-## Sponsors
-
-<p align="center"><img src="Assets/readme/monogram.webp" width="144" alt="Bladebro's angular B monogram with a browser toolbar and a katana blade"></p>
-
-Sponsorship funds maintenance, testing, and releases for Bladebro. Top-of-README placement is capped at 5 active slots so every sponsor stays visible.
-
-| Option | Price | What's included |
-|---|---:|---|
-| **Sponsor** | **$89/month** | Linked banner and short tagline near the top of the README, plus listing here. Prepay any number of months to lock the current rate. |
-| **Integration Partner** | **$399 upfront, then $89/month** | Everything in Sponsor for your first 3 months, plus a scoped native integration (e.g. setup bridge, provider preset, or site/service adapter) built, tested, and documented with you. |
-
-### How native integrations work
-
-1. **Free scope check first**: email what you want to integrate before paying anything. Integrations must genuinely help Bladebro users and fit its 5-tool design. If it's not a fit, you can still take a standard **$89/month** Sponsor slot.
-2. **Active maintenance**: while your sponsorship is active, the integration is maintained and kept working across Bladebro releases.
-3. **Fair lifecycle**: if sponsorship ends, working integrations stay in Bladebro. If an unsponsored integration later breaks due to upstream changes or becomes a maintenance burden, it may be deprecated or removed after a heads-up.
-
-### How to sponsor
-
-Email **bhandaribishesh879@gmail.com** with your product URL, banner (if you have one), and whether you want a Sponsor slot or an Integration Partner scope check. I'll confirm availability and share PayPal details. [Email about sponsorship](mailto:bhandaribishesh879@gmail.com).
-
-One-time support is also welcome through Ko-fi.
-
-[![Support Bladebro on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/G5Y624N5RE)
-
----
-
-[Star Bladebro](https://github.com/dondai44423/bladebro) · [Report an issue](https://github.com/dondai44423/bladebro/issues) · [Contribute](CONTRIBUTING.md) · [Security](SECURITY.md) · [Apache 2.0](LICENSE)
+Upstream is a well-built project and worth supporting if you use its code: SLSA provenance on its npm packages, fail-closed checksum verification, no install-time scripts, no telemetry endpoint in the shipped binary, owner-only daemon socket and sidecar. Its [`rb` lane](https://github.com/dondai44423/bladebro#browser-modes) is a genuinely capable feature for a human holding the wheel, and its [sponsorship](https://github.com/dondai44423/bladebro#sponsors) funds the maintenance. This fork exists because of one threat model, not a criticism.

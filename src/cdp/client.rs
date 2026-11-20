@@ -523,11 +523,11 @@ fn route_cdp_text(
                 let _ = events_tx.send(ev);
             }
             None => {
-                tracing::trace!(target: "bladebro.cdp", "unparseable CDP frame");
+                tracing::trace!(target: "webjitsu.cdp", "unparseable CDP frame");
             }
         },
         Err(e) => {
-            tracing::warn!(target: "bladebro.cdp", error=%e, "non-JSON CDP frame");
+            tracing::warn!(target: "webjitsu.cdp", error=%e, "non-JSON CDP frame");
         }
     }
     true

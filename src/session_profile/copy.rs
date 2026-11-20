@@ -108,7 +108,7 @@ pub(crate) fn copy_profile_ex_report(src: &Path, dst: &Path, extra_skip: &[&str]
     );
     if let Some(first) = &cut.first {
         eprintln!(
-            "[bladebro] profile copy incomplete: {} director{} nested deeper than \
+            "[webjitsu] profile copy incomplete: {} director{} nested deeper than \
              {MAX_COPY_DEPTH} levels not copied (first: {})",
             cut.count,
             if cut.count == 1 { "y" } else { "ies" },

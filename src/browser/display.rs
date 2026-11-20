@@ -36,7 +36,7 @@ impl VirtualDisplay {
     /// display as OURS before Xvfb even spawns. Timing-based
     /// verification ("is Xvfb still alive after 200ms") was
     /// not enough — a losing Xvfb can take >200ms to exit,
-    /// letting two bladebros share one display; when the
+    /// letting two webjitsus share one display; when the
     /// owner exits, the survivor's Chrome loses its display
     /// and dies (observed live: SIGTERM on session A killed
     /// session B's Chrome via a shared Xvfb).
@@ -98,10 +98,10 @@ impl VirtualDisplay {
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null());
-            // Out of bladebro's process group, so a Ctrl-C to the foreground
+            // Out of webjitsu's process group, so a Ctrl-C to the foreground
             // job leaves the display up while the browser closes and flushes
-            // (it died with bladebro's group, and Chrome lost its display
-            // mid-close). Killed by the kernel when bladebro dies, so a
+            // (it died with webjitsu's group, and Chrome lost its display
+            // mid-close). Killed by the kernel when webjitsu dies, so a
             // SIGKILL that runs no Drop still takes it down, and Chrome
             // exits on losing its display.
             let mut child = match crate::platform::spawn_tied_to_process(xvfb) {
@@ -128,7 +128,7 @@ impl VirtualDisplay {
                 match child.try_wait() {
                     Ok(Some(status)) => {
                         last_err = format!("Xvfb :{display_num} exited ({status})");
-                        eprintln!("[bladebro] Xvfb :{display_num} died ({status}), retrying");
+                        eprintln!("[webjitsu] Xvfb :{display_num} died ({status}), retrying");
                         release_display_claim(display_num);
                         let _ = std::fs::remove_file(&auth_file);
                         break;
@@ -136,7 +136,7 @@ impl VirtualDisplay {
                     Ok(None) => {
                         if xvfb_socket_owned_by(child.id(), display_num) {
                             let wm = spawn_session_chrome(display_num, &auth_file);
-                            eprintln!("[bladebro] Xvfb virtual display on :{display_num}");
+                            eprintln!("[webjitsu] Xvfb virtual display on :{display_num}");
                             return Ok(Self {
                                 child,
                                 wm,
@@ -219,7 +219,7 @@ fn spawn_session_chrome(display_num: u16, xauth: &std::path::Path) -> Option<Chi
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null());
-        // Same lifetime as Xvfb: survives the job's Ctrl-C, dies with bladebro.
+        // Same lifetime as Xvfb: survives the job's Ctrl-C, dies with webjitsu.
         crate::platform::spawn_tied_to_process(cmd).ok()
     });
     // Declare the taskbar after the WM owns the root and verify the read-back.

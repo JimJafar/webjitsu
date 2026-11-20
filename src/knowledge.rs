@@ -939,7 +939,7 @@ impl KnowledgeBase {
         self.dirty = true;
     }
 
-    /// Compact summary for `bladebro doctor` (read-only).
+    /// Compact summary for `webjitsu doctor` (read-only).
     pub fn summary(&self) -> KnowledgeSummary {
         let mut consent_rules = 0usize;
         let mut chirpy_domains = 0usize;

@@ -1,0 +1,28 @@
+{
+  "name": "webjitsu-windows-x64",
+  "version": "4.8.2",
+  "description": "WebJitsu binary for Windows x86_64",
+  "license": "Apache-2.0",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "webjitsu.exe",
+  "files": [
+    "webjitsu.exe"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JimJafar/webjitsu.git"
+  },
+  "funding": {
+    "url": "https://github.com/dondai44423/bladebro#sponsors"
+  },
+  "upstream": {
+    "name": "bladebro",
+    "repository": "https://github.com/dondai44423/bladebro",
+    "note": "WebJitsu is a fork; see FORK.md"
+  }
+}

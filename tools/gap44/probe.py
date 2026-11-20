@@ -27,7 +27,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-BIN = Path(os.environ.get("BLADEBRO", str(ROOT / "target" / "release" / "bladebro")))
+BIN = Path(os.environ.get("WEBJITSU", str(ROOT / "target" / "release" / "webjitsu")))
 
 RUN = sys.argv[1] if len(sys.argv) > 1 else "1"
 HOME = Path(tempfile.mkdtemp(prefix=f"blade-gap44-{RUN}-"))

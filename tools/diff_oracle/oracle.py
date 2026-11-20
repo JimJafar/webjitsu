@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bladebro differential oracle — stock Chrome vs a bladebro browser, side by
+"""WebJitsu differential oracle — stock Chrome vs a webjitsu browser, side by
 side on the same machine under the same display conditions; every deviation is
 classified EXPECTED (documented mask/isolation surface) or DIVERGENT (a bug).
 
@@ -10,8 +10,8 @@ Usage:
   python3 oracle.py [--chrome PATH] [--url URL] [--lane agent|real] [--report FILE.md] [--keep]
 
 Requirements: Linux + Xvfb (the stock baseline runs on its own Xvfb display so
-the comparison mirrors bladebro's isolated environment), python3, `websockets`,
-and a built bladebro (on PATH or via BLADEBRO env). Exit codes: 0 = clean,
+the comparison mirrors webjitsu's isolated environment), python3, `websockets`,
+and a built webjitsu (on PATH or via WEBJITSU env). Exit codes: 0 = clean,
 1 = DIVERGENT present, 2 = setup error.
 """
 import argparse
@@ -156,7 +156,7 @@ async def ws_eval(ws_url, expr, await_promise=True, timeout_ms=90000):
 
 
 def setup_display_session(display):
-    """Mirror bladebro's virtual-display setup: a window manager plus a
+    """Mirror webjitsu's virtual-display setup: a window manager plus a
     declared work area. Without them an Xvfb screen has no work area at all
     (availHeight == height, outerWidth == innerWidth) and every geometry
     comparison would be measuring the display, not the injection layer.
@@ -194,8 +194,8 @@ def seed_oracle_profile(root):
 def pristine_probe(chrome, port, display, url, battery, lane="agent"):
     """Launch stock Chrome on the given display and run the battery.
     In real-lane mode the stock flags mirror the real lane's own launch set
-    (plus the same functional GL enablers bladebro receives), so the only
-    thing under test is bladebro's own behavior."""
+    (plus the same functional GL enablers webjitsu receives), so the only
+    thing under test is webjitsu's own behavior."""
     tmp = tempfile.mkdtemp(prefix="blade-oracle-")
     seed_oracle_profile(tmp)
     env = dict(os.environ)
@@ -204,7 +204,7 @@ def pristine_probe(chrome, port, display, url, battery, lane="agent"):
         env.pop("WAYLAND_DISPLAY", None)
         env.pop("XDG_SESSION_TYPE", None)
     gl_enablers = [
-        # Environment enablers (identical to bladebro's), NOT stealth:
+        # Environment enablers (identical to webjitsu's), NOT stealth:
         # without them Chrome 139+ on a GPU-less display refuses software
         # WebGL and the baseline has no context at all. In agent mode the
         # stealth injection layer is the only difference under test; in
@@ -220,7 +220,7 @@ def pristine_probe(chrome, port, display, url, battery, lane="agent"):
             "--disable-features=PdfPlugin",
             f"--user-data-dir={tmp}", f"--remote-debugging-port={port}",
             "--profile-directory=Default",
-            # Geometry pinned on BOTH sides (bladebro gets the same two flags
+            # Geometry pinned on BOTH sides (webjitsu gets the same two flags
             # via BLADE_CHROME_FLAGS): window-manager placement jitter is not
             # a fingerprint surface, and it must not masquerade as one —
             # everything else stays strict (zero expected).
@@ -307,7 +307,7 @@ def probe_stock(candidates, display, url, battery, lane):
     fail("stock Chrome debug endpoint did not come up — " + " ; ".join(errors))
 
 
-def parse_bladebro_eval(out):
+def parse_webjitsu_eval(out):
     # JSON output can offload a large battery to an artifact; treating the
     # human "result: [artifact ...]" notice as JSON silently loses coverage.
     try:
@@ -337,18 +337,18 @@ def parse_bladebro_eval(out):
                 return json.loads(v1) if isinstance(v1, str) else v1
             except Exception as e:
                 fail(f"cannot parse eval result: {e}")
-    fail("no `result:` line in bladebro output")
+    fail("no `result:` line in webjitsu output")
 
 
-def bladebro_probe(bladebro, url, battery, env=None):
-    subprocess.run([bladebro, "stop"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
-    r = subprocess.run([bladebro, "nav", url], env=env, capture_output=True, text=True, timeout=240)
+def webjitsu_probe(webjitsu, url, battery, env=None):
+    subprocess.run([webjitsu, "stop"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+    r = subprocess.run([webjitsu, "nav", url], env=env, capture_output=True, text=True, timeout=240)
     if r.returncode != 0:
-        fail(f"bladebro nav failed: {r.stdout[-300:]} {r.stderr[-300:]}")
-    r = subprocess.run([bladebro, "--json", "act", "eval", battery, "--format", "json"], env=env, capture_output=True, text=True, timeout=240)
+        fail(f"webjitsu nav failed: {r.stdout[-300:]} {r.stderr[-300:]}")
+    r = subprocess.run([webjitsu, "--json", "act", "eval", battery, "--format", "json"], env=env, capture_output=True, text=True, timeout=240)
     if r.returncode != 0:
-        fail(f"bladebro act eval failed: {r.stdout[-300:]} {r.stderr[-300:]}")
-    return parse_bladebro_eval(r.stdout)
+        fail(f"webjitsu act eval failed: {r.stdout[-300:]} {r.stderr[-300:]}")
+    return parse_webjitsu_eval(r.stdout)
 
 
 def classify(key):
@@ -358,26 +358,26 @@ def classify(key):
     return None
 
 
-def require_real_lane_support(bladebro: str) -> None:
+def require_real_lane_support(webjitsu: str) -> None:
     """The real lane is forced via BLADE_LANE=real. A binary that predates the
     real-browser lane ignores that variable, and the run would silently measure
     the AGENT lane (masked GL, masked geometry) and report bogus divergences.
     Refuse instead of producing a lying report."""
     try:
-        r = subprocess.run([bladebro, "help", "--json"], capture_output=True,
+        r = subprocess.run([webjitsu, "help", "--json"], capture_output=True,
                            text=True, timeout=60)
         supported = r.returncode == 0 and '"rb"' in r.stdout
     except Exception:
         supported = False
     if not supported:
-        fail(f"{bladebro} does not support the real-browser lane (`rb` missing) — "
+        fail(f"{webjitsu} does not support the real-browser lane (`rb` missing) — "
              "BLADE_LANE=real would be ignored and the AGENT lane measured. Set "
-             "BLADEBRO to the build under test (e.g. "
-             "BLADEBRO=$PWD/target/release/bladebro).")
+             "WEBJITSU to the build under test (e.g. "
+             "WEBJITSU=$PWD/target/release/webjitsu).")
 
 
 def main():
-    ap = argparse.ArgumentParser(description="bladebro differential oracle")
+    ap = argparse.ArgumentParser(description="webjitsu differential oracle")
     ap.add_argument("--chrome", help="stock Chrome/Chromium path (default: CHROME_PATH or PATH)")
     ap.add_argument("--url", default="https://example.com", help="page both browsers load")
     ap.add_argument("--lane", choices=("agent", "real"), default="agent",
@@ -395,22 +395,22 @@ def main():
         behavior_body = f.read()
     battery = "(async()=>{" + behavior_body + battery_body + "})()"
 
-    bladebro = os.environ.get("BLADEBRO")
-    if not bladebro:
+    webjitsu = os.environ.get("WEBJITSU")
+    if not webjitsu:
         # Prefer the repo build over whatever PATH resolves to: a stale
-        # `bladebro` (an installed release predating a feature) silently
+        # `webjitsu` (an installed release predating a feature) silently
         # changes what is being measured.
         repo = os.path.dirname(os.path.dirname(here))
-        candidate = os.path.join(repo, "target", "release", "bladebro")
-        bladebro = (
+        candidate = os.path.join(repo, "target", "release", "webjitsu")
+        webjitsu = (
             candidate
             if os.path.exists(candidate) and os.access(candidate, os.X_OK)
-            else "bladebro"
+            else "webjitsu"
         )
-    if not shutil.which(bladebro) and not os.path.exists(bladebro):
-        fail("bladebro binary not found (set BLADEBRO)")
+    if not shutil.which(webjitsu) and not os.path.exists(webjitsu):
+        fail("webjitsu binary not found (set WEBJITSU)")
     if args.lane == "real":
-        require_real_lane_support(bladebro)
+        require_real_lane_support(webjitsu)
     candidates = chrome_candidates(args.chrome)
     chrome = candidates[0]
 
@@ -418,7 +418,7 @@ def main():
     if sys.platform.startswith("linux"):
         xvfb = find_xvfb()
         if not xvfb:
-            fail("Xvfb required on Linux (the baseline must mirror bladebro's display)")
+            fail("Xvfb required on Linux (the baseline must mirror webjitsu's display)")
         display = pick_display()
         xvfb_proc = subprocess.Popen(
             [xvfb, f":{display}", "-screen", "0", "1920x1080x24", "-ac", "-nolisten", "tcp"],
@@ -466,9 +466,9 @@ def main():
         print(f"[oracle] baseline: stock {chrome} on :{display}")
         stock, chrome = probe_stock(candidates, display, args.url, battery, lane=args.lane)
 
-        print(f"[oracle] subject: {bladebro} (lane={args.lane})")
+        print(f"[oracle] subject: {webjitsu} (lane={args.lane})")
         if args.lane == "real":
-            subject = bladebro_probe(bladebro, args.url, battery, env=real_env)
+            subject = webjitsu_probe(webjitsu, args.url, battery, env=real_env)
         else:
             # Pin the agent lane: a live real-browser config (`rb on`) would
             # silently redirect the subject to the user's own browser and the
@@ -491,7 +491,7 @@ def main():
             agent_env["BLADE_CHROME_FLAGS"] = (
                 agent_env.get("BLADE_CHROME_FLAGS", "") +
                 " --window-size=1600,900 --window-position=0,0")
-            subject = bladebro_probe(bladebro, args.url, battery, env=agent_env)
+            subject = webjitsu_probe(webjitsu, args.url, battery, env=agent_env)
     finally:
         if wm_proc:
             wm_proc.terminate()
@@ -506,10 +506,10 @@ def main():
             except subprocess.TimeoutExpired:
                 xvfb_proc.kill()
         if real_env is not None:
-            subprocess.run([bladebro, "stop"], env=real_env,
+            subprocess.run([webjitsu, "stop"], env=real_env,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
         if agent_env is not None:
-            subprocess.run([bladebro, "stop"], env=agent_env,
+            subprocess.run([webjitsu, "stop"], env=agent_env,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
         if not args.keep:
             if real_home:
@@ -542,8 +542,8 @@ def main():
             divergent.append(("webdriver-not-false", "false", wd))
 
     lines = []
-    lines.append("== bladebro differential oracle ==")
-    lines.append(f"baseline: stock {chrome} on :{display}  |  subject: {bladebro}")
+    lines.append("== webjitsu differential oracle ==")
+    lines.append(f"baseline: stock {chrome} on :{display}  |  subject: {webjitsu}")
     lines.append(f"lane: {args.lane}")
     lines.append(f"url: {args.url}")
     lines.append(f"keys: {len(keys)}   ok: {len(ok)}   expected: {len(expected)}   divergent: {len(divergent)}")
@@ -553,7 +553,7 @@ def main():
         for k, a, b, reason in expected:
             lines.append(f"  {k}")
             lines.append(f"    stock:     {str(a)[:110]}")
-            lines.append(f"    bladebro:  {str(b)[:110]}")
+            lines.append(f"    webjitsu:  {str(b)[:110]}")
             lines.append(f"    why: {reason}")
     if divergent:
         lines.append("")
@@ -561,7 +561,7 @@ def main():
         for k, a, b in divergent:
             lines.append(f"  {k}")
             lines.append(f"    stock:     {str(a)[:110]}")
-            lines.append(f"    bladebro:  {str(b)[:110]}")
+            lines.append(f"    webjitsu:  {str(b)[:110]}")
     report = "\n".join(lines)
     print(report)
     if args.report:
@@ -570,7 +570,7 @@ def main():
         print(f"[oracle] report written to {args.report}")
     if args.json_report:
         with open(args.json_report, "w", encoding="utf-8") as f:
-            json.dump({"lane": args.lane, "url": args.url, "binary": bladebro,
+            json.dump({"lane": args.lane, "url": args.url, "binary": webjitsu,
                        "chrome": chrome, "stock": stock, "subject": subject,
                        "expected": expected, "divergent": divergent}, f, indent=2)
     sys.exit(1 if divergent else 0)

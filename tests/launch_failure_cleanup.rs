@@ -2,16 +2,16 @@
 //! process tree (a forked helper, like Chrome's zygote, outlives a launcher
 //! that died at startup) and not the session profile (with BLADE_FRESH=1
 //! every attempt — up to three per launch — creates its own
-//! `bladebro-chrome-*` dir under the temp root). Both transports.
+//! `webjitsu-chrome-*` dir under the temp root). Both transports.
 //!
 //! The same holds when a termination signal (Ctrl-C) reaches an in-process
 //! run's process group, mid-launch or while the command runs: the browser runs
-//! in its own group, so bladebro dying on the signal's default action used to
+//! in its own group, so webjitsu dying on the signal's default action used to
 //! orphan it instead of cleaning up. A signal the run inherited as ignored
 //! (`nohup`, a non-interactive shell's `cmd &`) must stay ignored: the command
 //! finishes as it did before signals were caught. The virtual display must
 //! outlive a Ctrl-C to the run's group until the browser is closed, yet a
-//! SIGKILL, which nothing can catch, to the group or to bladebro alone must
+//! SIGKILL, which nothing can catch, to the group or to webjitsu alone must
 //! still take it down.
 #![cfg(unix)]
 
@@ -69,7 +69,7 @@ fn endpoint_browser(root: &Path) -> (PathBuf, PathBuf) {
 }
 
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
-/// `endpoint_browser` that, when bladebro stops it (SIGTERM), first records in
+/// `endpoint_browser` that, when webjitsu stops it (SIGTERM), first records in
 /// `display-at-close` whether its X display is still served: `up`, `down`, or
 /// `none` without a virtual display. Real Chrome exits on losing its display,
 /// so `down` means a real browser would already be gone, unflushed. The pause
@@ -151,7 +151,7 @@ http.server.ThreadingHTTPServer(('127.0.0.1', port), Endpoint).serve_forever()
 }
 
 fn base_command(root: &Path, fake: &Path, temp: &Path) -> std::process::Command {
-    let mut cmd = std::process::Command::new(env!("CARGO_BIN_EXE_bladebro"));
+    let mut cmd = std::process::Command::new(env!("CARGO_BIN_EXE_webjitsu"));
     cmd.env("BLADE_HOME", root.join("home"))
         .env("BLADE_NO_UPDATE_CHECK", "1")
         .env("BLADE_NO_WARMING", "1")
@@ -176,7 +176,7 @@ fn leftovers(temp: &Path, pids: &Path) -> (Vec<String>, Vec<i32>) {
         .unwrap()
         .flatten()
         .map(|e| e.file_name().to_string_lossy().to_string())
-        .filter(|n| n.starts_with("bladebro-chrome-"))
+        .filter(|n| n.starts_with("webjitsu-chrome-"))
         .collect();
     let helpers: Vec<i32> = std::fs::read_to_string(pids)
         .unwrap_or_default()
@@ -198,8 +198,8 @@ fn leftovers(temp: &Path, pids: &Path) -> (Vec<String>, Vec<i32>) {
     (profiles, survivors)
 }
 
-/// Every launch runs bladebro's orphan reaper, which kills an Xvfb whose
-/// bladebro is dead: run these tests one at a time, or a concurrent test's
+/// Every launch runs webjitsu's orphan reaper, which kills an Xvfb whose
+/// webjitsu is dead: run these tests one at a time, or a concurrent test's
 /// launch reaps the display a SIGINT'd run leaked before the check sees it.
 static LAUNCHES: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
@@ -224,7 +224,7 @@ fn scenario_with(
     (root, temp, fake, pids)
 }
 
-/// Linux: live processes tied to bladebro `pid`'s virtual display (see
+/// Linux: live processes tied to webjitsu `pid`'s virtual display (see
 /// `display_leftovers`). Elsewhere there is no Xvfb: nothing to find.
 fn display_processes(pid: u32) -> Vec<i32> {
     if !cfg!(target_os = "linux") {
@@ -245,7 +245,7 @@ fn display_processes(pid: u32) -> Vec<i32> {
 }
 
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
-/// Whether bladebro finds an Xvfb here (its fixed locations, then PATH). A
+/// Whether webjitsu finds an Xvfb here (its fixed locations, then PATH). A
 /// display test then fails, rather than skips, when no display came up.
 fn xvfb_installed() -> bool {
     let fixed = [
@@ -263,7 +263,7 @@ fn xvfb_installed() -> bool {
             .any(|dir| dir.join("Xvfb").is_file())
 }
 
-/// Linux: live processes still tied to bladebro `pid`'s virtual display.
+/// Linux: live processes still tied to webjitsu `pid`'s virtual display.
 /// Xvfb names the session's Xauthority file (`…-xauth-<pid>-…`) in its
 /// command line; the WM and the browser tree carry it in XAUTHORITY. Killed
 /// here either way. Elsewhere there is no Xvfb: nothing to find.
@@ -293,7 +293,7 @@ fn launching(root: &Path) -> bool {
 
 /// The launch is done and the command's own request is in flight
 /// (`endpoint_browser`). Linux-only with the tests that need it: those wait
-/// for bladebro to reach a stand-in DevTools endpoint on a virtual display it
+/// for webjitsu to reach a stand-in DevTools endpoint on a virtual display it
 /// started, and CI showed the endpoint poll timing out on macOS (no Xvfb; the
 /// launch path differs), so running them there would assert a scenario that
 /// does not exist on that platform.
@@ -401,7 +401,7 @@ fn signal_run(
         "the run never reached the signal point\n{stderr}"
     );
     let status =
-        status.unwrap_or_else(|| panic!("bladebro still running 60s after {signals:?}\n{stderr}"));
+        status.unwrap_or_else(|| panic!("webjitsu still running 60s after {signals:?}\n{stderr}"));
     assert!(
         survivors.is_empty() && profiles.is_empty() && display.is_empty(),
         "signals {signals:?} left browser processes {survivors:?}, display processes {display:?} and profiles {profiles:?} ({status:?})\n{stderr}"
@@ -415,7 +415,7 @@ fn signal_run(
     }
 }
 
-/// SIGINT while the browser is still starting: bladebro must not die on the
+/// SIGINT while the browser is still starting: webjitsu must not die on the
 /// spot. It has to outlive the signal long enough to tear down the browser
 /// tree, the profile and the virtual display it started (`signal_run` checks
 /// that), and then die of the signal after all: a shell running it in a loop
@@ -434,7 +434,7 @@ fn interrupt_mid_launch(name: &str, args: &[&str]) {
     assert_eq!(
         run.status.signal(),
         Some(libc::SIGINT),
-        "bladebro did not die of the SIGINT it cleaned up after ({:?})\n{}",
+        "webjitsu did not die of the SIGINT it cleaned up after ({:?})\n{}",
         run.status,
         run.stderr
     );
@@ -506,8 +506,8 @@ fn sigint_mid_launch_of_probe_leaves_nothing_behind() {
 }
 
 /// Ctrl-C while the command itself runs (the launch is done): the run is
-/// dropped, the browser bladebro launched is closed, the command reports the
-/// interruption, and only then does bladebro die of the signal, instead of
+/// dropped, the browser webjitsu launched is closed, the command reports the
+/// interruption, and only then does webjitsu die of the signal, instead of
 /// dying at once with Chrome left running.
 #[cfg(target_os = "linux")]
 #[test]
@@ -564,7 +564,7 @@ fn sigint_during_the_gl_ladder_stops_relaunching() {
 }
 
 /// Under `nohup` (SIGHUP ignored) or as a non-interactive shell's background
-/// job (SIGINT ignored) those signals never ended bladebro; catching them must
+/// job (SIGINT ignored) those signals never ended webjitsu; catching them must
 /// not start to. The run finishes normally.
 #[cfg(target_os = "linux")]
 #[test]
@@ -591,11 +591,11 @@ fn signals_ignored_on_entry_stay_ignored() {
     );
 }
 
-/// Ctrl-C to the job's process group (the terminal's ^C) reaches bladebro and,
+/// Ctrl-C to the job's process group (the terminal's ^C) reaches webjitsu and,
 /// unless kept out of that group, the virtual display: Xvfb died on the spot
-/// while bladebro was still closing the browser, and a real Chrome exited on
+/// while webjitsu was still closing the browser, and a real Chrome exited on
 /// losing its display before its graceful close could flush storage. The
-/// display must still be up when bladebro stops the browser.
+/// display must still be up when webjitsu stops the browser.
 /// (`tools/reliability_probe/persistence.py` checks the flush itself with a
 /// real Chrome.)
 #[cfg(target_os = "linux")]
@@ -623,7 +623,7 @@ fn sigint_to_the_process_group_keeps_the_display_up_until_the_browser_is_closed(
     assert_eq!(
         run.display_at_close.as_deref(),
         Some("up"),
-        "the browser lost its display before bladebro closed it\n{}",
+        "the browser lost its display before webjitsu closed it\n{}",
         run.stderr
     );
 }
@@ -640,7 +640,7 @@ struct KilledRun {
 
 #[cfg(target_os = "linux")]
 /// SIGKILL an in-process `probe` while the command runs: to its whole process
-/// group (`whole_group`) or to bladebro's pid alone.
+/// group (`whole_group`) or to webjitsu's pid alone.
 fn sigkill_mid_run(name: &str, whole_group: bool) -> KilledRun {
     let _serial = serial();
     let (root, temp, fake, pids) = scenario_with(name, endpoint_browser);
@@ -688,7 +688,7 @@ fn sigkill_mid_run(name: &str, whole_group: bool) -> KilledRun {
 }
 
 /// SIGKILL to an in-process run's process group (`timeout -s KILL`, a
-/// harness's killpg, a cancelled CI job) leaves bladebro no chance to clean
+/// harness's killpg, a cancelled CI job) leaves webjitsu no chance to clean
 /// up. The virtual display must die with it: Xvfb and the window manager run
 /// in their own process group (out of reach of the group's Ctrl-C), so it is
 /// the kernel's parent-death signal that takes them down; a real Chrome then
@@ -700,18 +700,18 @@ fn sigkill_to_the_process_group_takes_the_virtual_display_with_it() {
     let run = sigkill_mid_run("sigkill", true);
     assert!(
         run.display_after.is_empty(),
-        "SIGKILL to bladebro's process group left display processes {:?} running\n{}",
+        "SIGKILL to webjitsu's process group left display processes {:?} running\n{}",
         run.display_after,
         run.stderr
     );
 }
 
-/// SIGKILL to bladebro's pid alone (a harness's kill(pid), the OOM killer)
-/// reaches nothing else: the virtual display must still die with bladebro
+/// SIGKILL to webjitsu's pid alone (a harness's kill(pid), the OOM killer)
+/// reaches nothing else: the virtual display must still die with webjitsu
 /// instead of running on until some later launch's orphan reaper finds it.
 #[cfg(target_os = "linux")]
 #[test]
-fn sigkill_to_bladebro_alone_takes_the_virtual_display_with_it() {
+fn sigkill_to_webjitsu_alone_takes_the_virtual_display_with_it() {
     let run = sigkill_mid_run("sigkill-alone", false);
     if run.display_before == 0 && !xvfb_installed() {
         eprintln!(
@@ -727,7 +727,7 @@ fn sigkill_to_bladebro_alone_takes_the_virtual_display_with_it() {
     );
     assert!(
         run.display_after.is_empty(),
-        "SIGKILL to bladebro alone left display processes {:?} running\n{}",
+        "SIGKILL to webjitsu alone left display processes {:?} running\n{}",
         run.display_after,
         run.stderr
     );

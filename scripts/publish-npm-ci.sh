@@ -2,8 +2,8 @@
 # ── publish-npm-ci.sh: publish the six packages from CI artifacts ──────
 # Usage: scripts/publish-npm-ci.sh <dist-dir>
 # <dist-dir> holds the release binaries named exactly as the GitHub assets:
-#   bladebro-linux-x64, bladebro-linux-arm64, bladebro-windows-x64.exe,
-#   bladebro-darwin-x64, bladebro-darwin-arm64
+#   webjitsu-linux-x64, webjitsu-linux-arm64, webjitsu-windows-x64.exe,
+#   webjitsu-darwin-x64, webjitsu-darwin-arm64
 # Order is fixed: platform packages first, the launcher last. If the launcher
 # is already published at this version, fail closed. If an earlier run failed
 # partway through (e.g. a transient Sigstore Rekor 409 during provenance),
@@ -17,9 +17,9 @@ DIST="${1:-}"
 
 VERSION=$(awk -F'"' '/^version = /{print $2; exit}' Cargo.toml)
 [[ -n "$VERSION" ]] || { echo "ERROR: no version in Cargo.toml" >&2; exit 1; }
-echo "publishing bladebro v$VERSION from $DIST"
+echo "publishing webjitsu v$VERSION from $DIST"
 
-for pkg in bladebro bladebro-linux-x64 bladebro-linux-arm64 bladebro-windows-x64 bladebro-darwin-x64 bladebro-darwin-arm64; do
+for pkg in webjitsu webjitsu-linux-x64 webjitsu-linux-arm64 webjitsu-windows-x64 webjitsu-darwin-x64 webjitsu-darwin-arm64; do
     want=$(python3 -c "import json;print(json.load(open('npm/$pkg/package.json'))['version'])")
     [[ "$want" == "$VERSION" ]] || { echo "ERROR: npm/$pkg is $want, Cargo.toml is $VERSION" >&2; exit 1; }
 done
@@ -29,8 +29,8 @@ is_published() {
 }
 
 # Fail closed if the public launcher itself is already live at this version.
-if is_published "bladebro"; then
-    echo "ERROR: bladebro@$VERSION is already published — never republish a release" >&2
+if is_published "webjitsu"; then
+    echo "ERROR: webjitsu@$VERSION is already published — never republish a release" >&2
     exit 1
 fi
 
@@ -39,11 +39,11 @@ copy() {
     cp "$1" "$2"
     chmod +x "$2" 2>/dev/null || true
 }
-copy "$DIST/bladebro-linux-x64"   npm/bladebro-linux-x64/bladebro
-copy "$DIST/bladebro-linux-arm64" npm/bladebro-linux-arm64/bladebro
-copy "$DIST/bladebro-windows-x64.exe" npm/bladebro-windows-x64/bladebro.exe
-copy "$DIST/bladebro-darwin-x64"  npm/bladebro-darwin-x64/bladebro
-copy "$DIST/bladebro-darwin-arm64" npm/bladebro-darwin-arm64/bladebro
+copy "$DIST/webjitsu-linux-x64"   npm/webjitsu-linux-x64/webjitsu
+copy "$DIST/webjitsu-linux-arm64" npm/webjitsu-linux-arm64/webjitsu
+copy "$DIST/webjitsu-windows-x64.exe" npm/webjitsu-windows-x64/webjitsu.exe
+copy "$DIST/webjitsu-darwin-x64"  npm/webjitsu-darwin-x64/webjitsu
+copy "$DIST/webjitsu-darwin-arm64" npm/webjitsu-darwin-arm64/webjitsu
 
 publish_pkg() {
     local pkg="$1"
@@ -92,17 +92,17 @@ publish_pkg() {
     exit 1
 }
 
-for pkg in bladebro-linux-x64 bladebro-linux-arm64 bladebro-windows-x64 bladebro-darwin-x64 bladebro-darwin-arm64; do
+for pkg in webjitsu-linux-x64 webjitsu-linux-arm64 webjitsu-windows-x64 webjitsu-darwin-x64 webjitsu-darwin-arm64; do
     publish_pkg "$pkg" 1
 done
-publish_pkg bladebro 0
+publish_pkg webjitsu 0
 
 # Registry propagation: a bounded wait, not the old ten-minute window. Each
 # package must be visible at this version before the release goes Latest.
 echo "verifying the registry..."
 for _ in $(seq 1 30); do
     ok=0
-    for pkg in bladebro bladebro-linux-x64 bladebro-linux-arm64 bladebro-windows-x64 bladebro-darwin-x64 bladebro-darwin-arm64; do
+    for pkg in webjitsu webjitsu-linux-x64 webjitsu-linux-arm64 webjitsu-windows-x64 webjitsu-darwin-x64 webjitsu-darwin-arm64; do
         if is_published "$pkg"; then
             ok=$((ok + 1))
         fi

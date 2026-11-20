@@ -1,8 +1,8 @@
-//! Error types for Bladebro.
+//! Error types for WebJitsu.
 
 use thiserror::Error;
 
-/// All fallible Bladebro operations return this.
+/// All fallible WebJitsu operations return this.
 ///
 /// Kept as a single enum (not a `Box<dyn Error>`) so callers can match on the
 /// concrete cause — important for the self-diagnosing-failure design where the

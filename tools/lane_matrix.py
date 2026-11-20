@@ -18,8 +18,8 @@ Every lane runs on its own scratch BLADE_HOME (the agent lanes also pin
 BLADE_NO_WARMING=1) and cleans up its daemon/browsers afterwards — a run never
 touches the user's real data dir.
 
-Binary under test: `BLADEBRO` env -> the repo build (`target/release/bladebro`)
--> `~/.local/bin/bladebro`; printed at startup. The real lane refuses a binary
+Binary under test: `WEBJITSU` env -> the repo build (`target/release/webjitsu`)
+-> `~/.local/bin/webjitsu`; printed at startup. The real lane refuses a binary
 that predates `rb` (BLADE_LANE=real would be silently ignored).
 
 Exit 0 only when every label is clean; exit 1 when any result carries a
@@ -29,16 +29,16 @@ binary lacks real-lane support.
 import json, os, shutil, signal, subprocess, sys, tempfile, time
 
 def _resolve_blade():
-    """BLADEBRO wins; otherwise prefer the repo build (a stale installed
-    `bladebro` silently changes what is measured); then the user-local install."""
-    env = os.environ.get("BLADEBRO")
+    """WEBJITSU wins; otherwise prefer the repo build (a stale installed
+    `webjitsu` silently changes what is measured); then the user-local install."""
+    env = os.environ.get("WEBJITSU")
     if env:
         return env
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    candidate = os.path.join(repo, "target", "release", "bladebro")
+    candidate = os.path.join(repo, "target", "release", "webjitsu")
     if os.path.exists(candidate) and os.access(candidate, os.X_OK):
         return candidate
-    return os.path.expanduser("~/.local/bin/bladebro")
+    return os.path.expanduser("~/.local/bin/webjitsu")
 
 
 BLADE = _resolve_blade()
@@ -115,7 +115,7 @@ def classify_real(j):
     elif "NULL" in gl or gl.startswith("ERR"):
         # Headless GL support is an environment property — stock Chromium
         # reports exactly the same on this box; the oracle's real-lane gate
-        # proves bladebro-real matches stock on every key.
+        # proves webjitsu-real matches stock on every key.
         ok.append("gl-null(env)")
     else:
         ok.append(f"no-mask({gl[:26]})")
@@ -370,14 +370,14 @@ def require_real_lane_support():
         sys.stderr.write(
             f"FATAL: {BLADE} does not support the real-browser lane (`rb` missing) — "
             "BLADE_LANE=real would be ignored and the AGENT lane measured. "
-            "Set BLADEBRO to the build under test.\n")
+            "Set WEBJITSU to the build under test.\n")
         sys.exit(2)
 
 
 if __name__ == "__main__":
     lane = sys.argv[1] if len(sys.argv) > 1 else "all"
     rounds = int(sys.argv[2]) if len(sys.argv) > 2 else 5
-    print(f"bladebro under test: {BLADE}")
+    print(f"webjitsu under test: {BLADE}")
     if lane in ("real", "all"):
         require_real_lane_support()
     bad = 0

@@ -17,7 +17,7 @@ import threading
 import time
 import urllib.request
 
-BINARY = os.environ.get("BLADEBRO", str(Path(__file__).resolve().parents[2] / "target/release/bladebro"))
+BINARY = os.environ.get("WEBJITSU", str(Path(__file__).resolve().parents[2] / "target/release/webjitsu"))
 HELIUM = str(Path(os.environ["HELIUM_BINARY"]).resolve())
 checks = 0
 

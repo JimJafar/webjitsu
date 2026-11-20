@@ -1,7 +1,7 @@
 //! Browser process management — find Chrome, launch it with stealth flags,
 //! wait for the CDP debug endpoint, and clean up on drop.
 //!
-//! The "one binary, works out of the box" promise (D2/D8): Bladebro finds
+//! The "one binary, works out of the box" promise (D2/D8): WebJitsu finds
 //! Chrome itself — no manual `--remote-debugging-port` setup. On NixOS it
 //! scans the nix store via `fd`; on mainstream distros it checks PATH and
 //! common install paths, then Flatpak exports (read-only-root distros such as
@@ -153,14 +153,14 @@ pub(crate) fn upload_path(source: &std::path::Path) -> Result<std::path::PathBuf
 /// Chromium's zygote and utility sandboxes in its own session, so the group
 /// signal never reaches them, and where the portal does not nest them in the
 /// browser's pid namespace they outlive it (observed on SteamOS after failed
-/// launches). Only bladebro's own agent-lane session dirs qualify: a
+/// launches). Only webjitsu's own agent-lane session dirs qualify: a
 /// borrowed or real-lane profile may be shared with the user's own browser.
 /// After a requested close the stragglers get a flush grace first.
 pub(crate) fn stop_profile_processes(
     profile: &crate::session_profile::SessionProfile,
     close_requested: bool,
 ) {
-    // Only bladebro's own per-process session dirs (agent lane AND real-lane
+    // Only webjitsu's own per-process session dirs (agent lane AND real-lane
     // clone `sess-<pid>` dirs) qualify — borrowed `BLADE_PROFILE_DIR` and
     // adopted user profiles (`rb mode profile`) have `is_owned() == false`.
     if !profile.is_owned() {
@@ -252,7 +252,7 @@ impl Browser {
             }
         }
         if !self.close_requested {
-            eprintln!("[bladebro] graceful close of the owned browser was unavailable; using process cleanup, recent storage flush is unverified");
+            eprintln!("[webjitsu] graceful close of the owned browser was unavailable; using process cleanup, recent storage flush is unverified");
         }
         let _ = tokio::task::spawn_blocking(move || self.shutdown()).await;
     }
@@ -264,7 +264,7 @@ impl Browser {
         let profile = self.profile.clone();
         drop(self); // kills Chrome + Xvfb
                     // Retain ownership metadata: a path under /tmp is not proof that
-                    // an adopted user profile belongs to Bladebro.
+                    // an adopted user profile belongs to WebJitsu.
         profile.cleanup();
     }
 }
@@ -276,7 +276,7 @@ impl Browser {
 /// launcher that died at startup can leave forked helpers in its group) and
 /// only then removes the profile, exactly as a shut-down `Browser` would.
 /// Before this only the incognito error path cleaned up: with BLADE_FRESH=1
-/// each failed attempt (up to three per launch) left a `bladebro-chrome-*`
+/// each failed attempt (up to three per launch) left a `webjitsu-chrome-*`
 /// profile in the temp dir, and a failed status poll dropped the child
 /// without killing anything.
 ///

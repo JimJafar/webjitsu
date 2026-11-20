@@ -69,12 +69,12 @@ impl Page {
                 let want_mask = crate::page::intercept::InterceptState::parse_classes(&spec);
                 if want_mask != self.block_rules() {
                     if let Err(e) = self.apply_knowledge_block_classes(&spec).await {
-                        eprintln!("[bladebro] stored block config failed to apply: {e}");
+                        eprintln!("[webjitsu] stored block config failed to apply: {e}");
                     }
                 }
             } else if self.block_from_knowledge {
                 if let Err(e) = self.set_block_classes("none").await {
-                    eprintln!("[bladebro] clearing prior domain block config failed: {e}");
+                    eprintln!("[webjitsu] clearing prior domain block config failed: {e}");
                 }
             }
         }
@@ -554,7 +554,7 @@ impl Page {
             .filter(|l| crate::stealth::normalize_locale(l).is_none())
         {
             eprintln!(
-                "[bladebro] WARNING: {domain}: profiles.json locale {bad:?} is not a BCP-47 tag like en-US — ignored"
+                "[webjitsu] WARNING: {domain}: profiles.json locale {bad:?} is not a BCP-47 tag like en-US — ignored"
             );
         }
         let want = Emulation::for_domain(profile, &Emulation::session());
@@ -573,12 +573,12 @@ impl Page {
             {
                 Ok(_) => {
                     eprintln!(
-                        "[bladebro] domain profile {domain}: tz={}",
+                        "[webjitsu] domain profile {domain}: tz={}",
                         want.tz.as_deref().unwrap_or("(browser default)")
                     );
                     self.emulation.tz = want.tz.clone();
                 }
-                Err(e) => eprintln!("[bladebro] WARNING: {domain}: timezone override failed: {e}"),
+                Err(e) => eprintln!("[webjitsu] WARNING: {domain}: timezone override failed: {e}"),
             }
         }
         if want.locale != self.emulation.locale {
@@ -609,12 +609,12 @@ impl Page {
             match applied {
                 Ok(_) => {
                     eprintln!(
-                        "[bladebro] domain profile {domain}: locale={}",
+                        "[webjitsu] domain profile {domain}: locale={}",
                         want.locale.as_deref().unwrap_or("(browser default)")
                     );
                     self.emulation.locale = want.locale.clone();
                 }
-                Err(e) => eprintln!("[bladebro] WARNING: {domain}: locale override failed: {e}"),
+                Err(e) => eprintln!("[webjitsu] WARNING: {domain}: locale override failed: {e}"),
             }
         }
 
@@ -638,7 +638,7 @@ impl Page {
                     self.stealth_script_id = Some(id);
                     self.active_locale = want.locale.clone();
                 }
-                Err(e) => eprintln!("[bladebro] WARNING: locale swap injection failed: {e}"),
+                Err(e) => eprintln!("[webjitsu] WARNING: locale swap injection failed: {e}"),
             }
         }
     }

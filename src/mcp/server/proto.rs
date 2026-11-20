@@ -29,7 +29,7 @@ pub(super) fn handle_initialize(id: Option<Value>, params: &Value) -> Value {
                 "tools": { "listChanged": false }
             },
             "serverInfo": {
-                "name": "bladebro",
+                "name": "webjitsu",
                 "version": env!("CARGO_PKG_VERSION"),
             },
             "instructions": INSTRUCTIONS,

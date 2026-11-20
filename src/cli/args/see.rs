@@ -63,7 +63,7 @@ pub(crate) fn parse_see_args(args: &[String]) -> Result<Value> {
                 "content" | "clear" | "preview" | "items" | "changes" => j[flag] = json!(true),
                 _ => {
                     return Err(BladeError::Usage(format!(
-                        "unknown flag --{flag} for see — see 'bladebro help see'"
+                        "unknown flag --{flag} for see — see 'webjitsu help see'"
                     )))
                 }
             }
@@ -86,7 +86,7 @@ pub(crate) fn parse_see_args(args: &[String]) -> Result<Value> {
         } else {
             return Err(BladeError::Usage(format!(
                 "unrecognized argument '{a}' — expected a mode (model|content|outline), \
-                 'extract <auto|links|forms|json>', or a URL. See 'bladebro help see'"
+                 'extract <auto|links|forms|json>', or a URL. See 'webjitsu help see'"
             )));
         }
         i += 1;

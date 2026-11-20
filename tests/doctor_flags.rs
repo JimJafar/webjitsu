@@ -1,4 +1,4 @@
-//! `bladebro doctor` must name the setting that is actually broken. A
+//! `webjitsu doctor` must name the setting that is actually broken. A
 //! BLADE_CHROME_FLAGS value with an unterminated quote fails every launch;
 //! it used to be reported under "Agent browser mode" with the fix "Set
 //! BLADE_INCOGNITO to auto, 0 or 1", a setting that was fine.
@@ -7,10 +7,10 @@
 
 #[test]
 fn malformed_chrome_flags_are_reported_as_chrome_flags() {
-    let home = std::env::temp_dir().join(format!("bladebro-doctor-flags-{}", std::process::id()));
+    let home = std::env::temp_dir().join(format!("webjitsu-doctor-flags-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&home);
     std::fs::create_dir_all(&home).unwrap();
-    let out = std::process::Command::new(env!("CARGO_BIN_EXE_bladebro"))
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_webjitsu"))
         .arg("doctor")
         .env("BLADE_HOME", &home)
         .env("BLADE_NO_UPDATE_CHECK", "1")

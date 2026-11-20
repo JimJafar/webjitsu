@@ -13,13 +13,13 @@
 
 use std::time::Duration;
 
-use bladebro::cdp::{CdpClient, CdpSession};
-use bladebro::BladeError;
 use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
 use tokio::net::TcpListener;
 use tokio_tungstenite::accept_async;
 use tokio_tungstenite::tungstenite::Message;
+use webjitsu::cdp::{CdpClient, CdpSession};
+use webjitsu::BladeError;
 
 #[tokio::test]
 async fn event_between_wait_creation_and_command_response_is_not_lost() {
@@ -263,10 +263,10 @@ async fn rejected_scroll_stops_at_first_dispatch_without_claiming_success() {
     let cdp = CdpSession::root(client);
     let result = tokio::time::timeout(
         Duration::from_secs(3),
-        bladebro::action::perform(
+        webjitsu::action::perform(
             &cdp,
-            &mut bladebro::page::LivePageModel::new(),
-            &bladebro::action::Action::Scroll { dx: 0, dy: 500 },
+            &mut webjitsu::page::LivePageModel::new(),
+            &webjitsu::action::Action::Scroll { dx: 0, dy: 500 },
             &Arc::new(Mutex::new(None)),
         ),
     )
@@ -300,7 +300,7 @@ async fn capture_surfaces_a_dead_connection_instead_of_an_empty_page() {
     let cdp = CdpSession::root(client);
     let res = tokio::time::timeout(
         Duration::from_secs(5),
-        bladebro::page::perception::capture(&cdp),
+        webjitsu::page::perception::capture(&cdp),
     )
     .await
     .expect("capture must not hang on a closed connection");
@@ -400,14 +400,14 @@ async fn scripted_page_with(
 }
 
 /// A model holding one element, as a capture would mint it.
-fn one_element_model(tag: &str, role: &str, name: &str) -> (bladebro::page::LivePageModel, String) {
-    let mut lpm = bladebro::page::LivePageModel::new();
-    lpm.ingest(bladebro::page::PageCapture {
+fn one_element_model(tag: &str, role: &str, name: &str) -> (webjitsu::page::LivePageModel, String) {
+    let mut lpm = webjitsu::page::LivePageModel::new();
+    lpm.ingest(webjitsu::page::PageCapture {
         url: "http://fixture.test/".into(),
         title: String::new(),
         ready_state: "complete".into(),
         muts: 0,
-        elements: vec![bladebro::page::perception::RawElement {
+        elements: vec![webjitsu::page::perception::RawElement {
             tag: tag.into(),
             role: role.into(),
             name: name.into(),
@@ -484,10 +484,10 @@ async fn type_never_presses_keys_when_the_target_cannot_take_them() {
         let (mut lpm, ref_id) = one_element_model("input", "textbox", "Locked password");
         let result = tokio::time::timeout(
             Duration::from_secs(20),
-            bladebro::action::perform(
+            webjitsu::action::perform(
                 &cdp,
                 &mut lpm,
-                &bladebro::action::Action::Type {
+                &webjitsu::action::Action::Type {
                     ref_id,
                     text: "hunter2".into(),
                 },
@@ -536,10 +536,10 @@ async fn hover_that_cannot_re_resolve_after_a_failed_move_is_an_error() {
     let (mut lpm, ref_id) = one_element_model("button", "button", "Hover me");
     let result = tokio::time::timeout(
         Duration::from_secs(20),
-        bladebro::action::perform(
+        webjitsu::action::perform(
             &cdp,
             &mut lpm,
-            &bladebro::action::Action::Hover {
+            &webjitsu::action::Action::Hover {
                 ref_id: ref_id.clone(),
             },
             &std::sync::Arc::new(std::sync::Mutex::new(None)),
@@ -584,10 +584,10 @@ async fn clear_of_a_vanished_target_touches_no_other_field() {
     let (mut lpm, ref_id) = one_element_model("div", "textbox", "Notes");
     let result = tokio::time::timeout(
         Duration::from_secs(20),
-        bladebro::action::perform(
+        webjitsu::action::perform(
             &cdp,
             &mut lpm,
-            &bladebro::action::Action::Clear { ref_id },
+            &webjitsu::action::Action::Clear { ref_id },
             &std::sync::Arc::new(std::sync::Mutex::new(None)),
         ),
     )
@@ -628,10 +628,10 @@ async fn select_on_a_text_combobox_types_instead_of_assigning() {
     let (mut lpm, ref_id) = one_element_model("input", "combobox", "City search");
     let result = tokio::time::timeout(
         Duration::from_secs(20),
-        bladebro::action::perform(
+        webjitsu::action::perform(
             &cdp,
             &mut lpm,
-            &bladebro::action::Action::Select {
+            &webjitsu::action::Action::Select {
                 ref_id,
                 option: "Paris".into(),
             },
@@ -691,10 +691,10 @@ async fn clear_never_presses_keys_when_the_target_cannot_take_focus() {
         let (mut lpm, ref_id) = one_element_model("input", "textbox", "Locked name");
         let result = tokio::time::timeout(
             Duration::from_secs(20),
-            bladebro::action::perform(
+            webjitsu::action::perform(
                 &cdp,
                 &mut lpm,
-                &bladebro::action::Action::Clear { ref_id },
+                &webjitsu::action::Action::Clear { ref_id },
                 &std::sync::Arc::new(std::sync::Mutex::new(None)),
             ),
         )
@@ -764,10 +764,10 @@ async fn a_field_that_trims_its_value_is_typed_once() {
     let (mut lpm, ref_id) = one_element_model("input", "textbox", "Search");
     let result = tokio::time::timeout(
         Duration::from_secs(30),
-        bladebro::action::perform(
+        webjitsu::action::perform(
             &cdp,
             &mut lpm,
-            &bladebro::action::Action::Type {
+            &webjitsu::action::Action::Type {
                 ref_id,
                 text: "  x".into(),
             },
@@ -824,7 +824,7 @@ async fn child_wait_for_returns_closed_immediately_when_target_detaches() {
     let started = std::time::Instant::now();
     let res = wait.await;
     assert!(
-        matches!(res, Err(bladebro::error::BladeError::Closed)),
+        matches!(res, Err(webjitsu::error::BladeError::Closed)),
         "expected Closed on detached child session, got {res:?}"
     );
     assert!(

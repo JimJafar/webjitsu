@@ -19,7 +19,7 @@ const c = {
 
 function fail(headline, hint) {
   if (useColor) {
-    process.stderr.write(`  ${c.crimson('✖')} ${c.dim('bladebro:')} ${headline}\n`);
+    process.stderr.write(`  ${c.crimson('✖')} ${c.dim('webjitsu:')} ${headline}\n`);
     if (hint) process.stderr.write(`    ${c.gold('›')} ${c.dim(hint)}\n`);
   } else {
     process.stderr.write(headline + '\n');
@@ -39,26 +39,26 @@ function launchFailed(error) {
   // The binary could not be spawned (missing exec bit, wrong arch, deleted
   // file). Without this the shim exited 0 while nothing ran — a silent no-op
   // that scripts and agents read as success.
-  const headline = `bladebro: failed to launch ${binPath}: ${error.message}`;
+  const headline = `webjitsu: failed to launch ${binPath}: ${error.message}`;
   if (process.platform === 'linux' && error.code === 'ENOENT') {
     // The kernel reports ENOENT for a present ELF whose dynamic loader is
     // missing too. Reinstalling the same glibc prebuild cannot help musl hosts.
     fail(
       headline,
-      'The executable or its loader is missing. Prebuilt Linux binaries require glibc >= 2.28; on Alpine/musl, build from source: https://github.com/dondai44423/bladebro#from-source',
+      'The executable or its loader is missing. Prebuilt Linux binaries require glibc >= 2.28; on Alpine/musl, build from source: cargo build --release (see FORK.md)',
     );
   } else if (error.code === 'ENOEXEC') {
     fail(
       headline,
-      `Binary architecture mismatch for ${process.platform}-${process.arch}. Reinstall with matching Node architecture: npm install -g bladebro`,
+      `Binary architecture mismatch for ${process.platform}-${process.arch}. Reinstall with matching Node architecture: npm install -g webjitsu`,
     );
   } else if (error.code === 'EACCES') {
     fail(
       headline,
-      `Permission denied. Run chmod +x "${binPath}" or reinstall: npm install -g bladebro`,
+      `Permission denied. Run chmod +x "${binPath}" or reinstall: npm install -g webjitsu`,
     );
   } else {
-    fail(headline, 'Reinstall: npm install bladebro');
+    fail(headline, 'Reinstall: npm install webjitsu');
   }
 }
 
@@ -99,7 +99,7 @@ child.on('exit', (code, signal) => {
     for (const s of FORWARDED) process.removeListener(s, forward);
     process.kill(process.pid, signal);
     // Still running: Node ignores SIGPIPE, so that re-raise was a no-op and the
-    // launcher fell through to exit 0 — `npx bladebro see | head` reported
+    // launcher fell through to exit 0 — `npx webjitsu see | head` reported
     // success after the binary died. Report the death the way a shell does.
     process.exit(128 + (constants.signals[signal] || 0));
   }

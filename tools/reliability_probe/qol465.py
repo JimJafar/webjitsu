@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Root selector waits and explicit toggle fill values; owned MCP/live fixtures.
 
-BLADEBRO selects a binary, POLISH_OUT retains JSON-RPC + live readbacks.
+WEBJITSU selects a binary, POLISH_OUT retains JSON-RPC + live readbacks.
 --baseline records failures without aborting. Run under capped.
 """
 import http.server
@@ -15,7 +15,7 @@ import tempfile
 import threading
 import time
 
-BINARY = os.environ.get('BLADEBRO', str(Path(__file__).resolve().parents[2] / 'target/release/bladebro'))
+BINARY = os.environ.get('WEBJITSU', str(Path(__file__).resolve().parents[2] / 'target/release/webjitsu'))
 OUT = Path(os.environ.get('POLISH_OUT', 'work/release465/qol.json'))
 OUT.parent.mkdir(parents=True, exist_ok=True)
 checks, receipts = [], []

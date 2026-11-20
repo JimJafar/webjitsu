@@ -1,4 +1,4 @@
-//! `bladebro audit` — runs the S13 stealth audit for the CLI.
+//! `webjitsu audit` — runs the S13 stealth audit for the CLI.
 //!
 //! Executed by main.rs with an owned, guarded browser. The vector suite and
 //! the injection-lint fixtures live in `tests/vectors.html` (embedded in the
@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 const VECTORS_HTML: &str = include_str!("../tests/vectors.html");
 const NATIVE_BEHAVIOR_JS: &str = include_str!("../tests/fixtures/native_behavior.js");
 
-/// S13: `bladebro audit` — run the stealth vectors, the boot self-check (S2),
+/// S13: `webjitsu audit` — run the stealth vectors, the boot self-check (S2),
 /// and a cross-restart consistency stamp (v3.9.12); print a scorecard.
 /// One-shot CLI command (WS transport).
 pub async fn run_audit(base: &str) -> Result<()> {
@@ -59,7 +59,7 @@ pub async fn run_audit(base: &str) -> Result<()> {
     if crate::realbrowser::real_lane() {
         eprintln!(
             "{} the real-browser lane is ON — this audit measures YOUR browser (zero page patches); \
-             the mask vectors below are N/A. `bladebro rb off` (or BLADE_LANE=agent) audits the agent lane.",
+             the mask vectors below are N/A. `webjitsu rb off` (or BLADE_LANE=agent) audits the agent lane.",
             ui::err::yellow("⚠")
         );
     }
@@ -218,7 +218,7 @@ var out={};
 try{
 var c=document.createElement('canvas');c.width=240;c.height=60;
 var x=c.getContext('2d');x.textBaseline='top';x.font='16px Arial';x.fillStyle='#f60';
-x.fillRect(10,10,80,20);x.fillStyle='#069';x.fillText('Bladebro,\ud83d\ude00',12,24);
+x.fillRect(10,10,80,20);x.fillStyle='#069';x.fillText('WebJitsu,\ud83d\ude00',12,24);
 var d=c.toDataURL();var hh=5381;for(var i=0;i<d.length;i++)hh=((hh<<5)+hh+d.charCodeAt(i))>>>0;out.canvas=hh.toString(16);
 var ac=new OfflineAudioContext(1,5000,44100);var o=ac.createOscillator();o.frequency.value=1000;
 var k=ac.createDynamicsCompressor();o.connect(k);k.connect(ac.destination);o.start(0);
@@ -473,7 +473,7 @@ mod vector_gate_tests {
 
     #[test]
     fn a_complete_passing_report_passes() {
-        let report = "Bladebro Stealth Vector Suite\nSCORE: 111/111 pass\nPASS webdriver: false";
+        let report = "WebJitsu Stealth Vector Suite\nSCORE: 111/111 pass\nPASS webdriver: false";
         assert_eq!(vector_failures(Ok(()), report), Vec::<String>::new());
     }
 
@@ -483,7 +483,7 @@ mod vector_gate_tests {
         // page still shows its placeholder. This used to print VERDICT: PASS.
         let f = vector_failures(
             Err(TIMEOUT.into()),
-            "Bladebro Stealth Vector Suite\nRUNNING",
+            "WebJitsu Stealth Vector Suite\nRUNNING",
         );
         assert!(f.iter().any(|x| x.contains("did not finish")), "{f:?}");
         assert!(f.iter().any(|x| x.contains("no SCORE")), "{f:?}");
@@ -498,7 +498,7 @@ mod vector_gate_tests {
     #[test]
     fn a_missing_or_unparseable_score_fails() {
         for report in [
-            "Bladebro Stealth Vector Suite\nRUNNING",
+            "WebJitsu Stealth Vector Suite\nRUNNING",
             "SCORE: ",
             "SCORE: pending",
             "SCORE: 111 of 111 pass",
@@ -528,8 +528,8 @@ mod file_url_tests {
     #[test]
     fn windows_paths_become_valid_file_urls() {
         assert_eq!(
-            file_url_from_str(r"D:\a\bladebro\tests\vectors.html", true),
-            "file:///D:/a/bladebro/tests/vectors.html"
+            file_url_from_str(r"D:\a\webjitsu\tests\vectors.html", true),
+            "file:///D:/a/webjitsu/tests/vectors.html"
         );
         assert_eq!(
             file_url_from_str(r"\\?\D:\a\b.html", true),

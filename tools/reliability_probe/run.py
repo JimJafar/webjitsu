@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Live mutation/state regression suite. Own Chrome, HTTP fixture and data home.
-BLADEBRO=/path/to/binary python3 tools/reliability_probe/run.py
+WEBJITSU=/path/to/binary python3 tools/reliability_probe/run.py
 """
 import http.server
 import json
@@ -12,7 +12,7 @@ import tempfile
 import threading
 import time
 
-BINARY = os.environ.get('BLADEBRO', str(Path(__file__).resolve().parents[2] / 'target/release/bladebro'))
+BINARY = os.environ.get('WEBJITSU', str(Path(__file__).resolve().parents[2] / 'target/release/webjitsu'))
 CHROME = os.environ.get('CHROME', shutil.which('chromium') or shutil.which('google-chrome') or '')
 assert CHROME, 'Chrome/Chromium is required'
 checks = 0

@@ -1,15 +1,15 @@
 {
-  "name": "bladebro",
+  "name": "webjitsu",
   "version": "4.8.2",
   "description": "Stealthy and efficient agentic browser driver for AI agents. Few tools, full control, real stealth, max token efficiency.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dondai44423/bladebro.git"
+    "url": "git+https://github.com/JimJafar/webjitsu.git"
   },
-  "homepage": "https://github.com/dondai44423/bladebro#readme",
+  "homepage": "https://github.com/JimJafar/webjitsu#readme",
   "bugs": {
-    "url": "https://github.com/dondai44423/bladebro/issues"
+    "url": "https://github.com/JimJafar/webjitsu/issues"
   },
   "keywords": [
     "pi-package",
@@ -40,7 +40,7 @@
     }
   },
   "bin": {
-    "bladebro": "bin.js"
+    "webjitsu": "bin.js"
   },
   "files": [
     "bin.js",
@@ -53,11 +53,11 @@
     "LICENSE"
   ],
   "optionalDependencies": {
-    "bladebro-linux-x64": "4.8.2",
-    "bladebro-linux-arm64": "4.8.2",
-    "bladebro-darwin-x64": "4.8.2",
-    "bladebro-darwin-arm64": "4.8.2",
-    "bladebro-windows-x64": "4.8.2"
+    "webjitsu-linux-x64": "4.8.2",
+    "webjitsu-linux-arm64": "4.8.2",
+    "webjitsu-darwin-x64": "4.8.2",
+    "webjitsu-darwin-arm64": "4.8.2",
+    "webjitsu-windows-x64": "4.8.2"
   },
   "engines": {
     "node": ">=14"
@@ -66,5 +66,13 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
+  },
+  "funding": {
+    "url": "https://github.com/dondai44423/bladebro#sponsors"
+  },
+  "upstream": {
+    "name": "bladebro",
+    "repository": "https://github.com/dondai44423/bladebro",
+    "note": "WebJitsu is a fork; see FORK.md"
   }
 }

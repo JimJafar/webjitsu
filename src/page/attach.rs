@@ -70,7 +70,7 @@ impl Page {
         // a browser armed with an EPHEMERAL `--remote-debugging-port=0` (or
         // via Chrome's chrome://inspect approval flow) reports
         // `navigator.webdriver === true` natively — Chromium's own behavior,
-        // not a bladebro patch (fixed-port arms report false). The lane's
+        // not a webjitsu patch (fixed-port arms report false). The lane's
         // contract forbids masking it, so surface it once instead of letting
         // the agent discover it from a page.
         if crate::realbrowser::real_lane()
@@ -126,7 +126,7 @@ impl Page {
                 .await
             {
                 crate::browser::set_ua_override_failed();
-                eprintln!("[bladebro] WARNING: UA override failed: {e}");
+                eprintln!("[webjitsu] WARNING: UA override failed: {e}");
             }
         }
         // S6: geo-consistent identity — timezone and locale must match the
@@ -144,13 +144,13 @@ impl Page {
                         )
                         .await
                     {
-                        eprintln!("[bladebro] WARNING: timezone override failed: {e}");
+                        eprintln!("[webjitsu] WARNING: timezone override failed: {e}");
                     } else {
-                        eprintln!("[bladebro] timezone override: {tz}");
+                        eprintln!("[webjitsu] timezone override: {tz}");
                     }
                 }
             } else if std::env::var("BLADE_PROXY").is_ok() {
-                eprintln!("[bladebro] WARNING: BLADE_PROXY set but BLADE_TZ not set — timezone/IP mismatch will be detected");
+                eprintln!("[webjitsu] WARNING: BLADE_PROXY set but BLADE_TZ not set — timezone/IP mismatch will be detected");
             }
             // The same BCP-47 normalization as the injection (`en_US` →
             // `en-US`): Intl, navigator.language and Accept-Language must
@@ -174,7 +174,7 @@ impl Page {
                         })),
                     )
                     .await;
-                eprintln!("[bladebro] locale override: {locale}");
+                eprintln!("[webjitsu] locale override: {locale}");
             }
         }
         // Inject the stealth script before any page loads. This runs at
@@ -183,7 +183,7 @@ impl Page {
             Ok(id) => Some(id),
             Err(e) => {
                 crate::browser::set_stealth_inject_failed();
-                eprintln!("[bladebro] WARNING: stealth injection failed: {e}");
+                eprintln!("[webjitsu] WARNING: stealth injection failed: {e}");
                 None
             }
         };
@@ -236,7 +236,7 @@ impl Page {
         // M17: Set download behavior so downloads don't hang the browser.
         // SECURITY: ~/.blade/downloads (0700) instead of a shared predictable
         // /tmp dir — downloads can contain private documents, and a shared
-        // /tmp/bladebro-downloads leaked them across local users (and was a
+        // /tmp/webjitsu-downloads leaked them across local users (and was a
         // symlink pre-placement target). The absolute path is returned to
         // the agent in the download result, so nothing depends on /tmp.
         let download_dir = crate::platform::downloads_dir();

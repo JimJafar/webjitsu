@@ -19,12 +19,12 @@ let checks = 0;
 const pass = (name) => { checks++; console.log('PASS', name); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** Load `npm/bladebro/pi-extension.ts` the way pi does: types stripped, host APIs
+/** Load `npm/webjitsu/pi-extension.ts` the way pi does: types stripped, host APIs
  *  injected. `resolvePackageJson(name)` returns the platform package's package.json
  *  path — omitted to simulate a package that is not installed. The extension keeps
  *  its imports single-line; this harness supplies them. */
 function loadExtension(resolvePackageJson) {
-  const source = readFileSync(new URL('../../npm/bladebro/pi-extension.ts', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../../npm/webjitsu/pi-extension.ts', import.meta.url), 'utf8');
   const body = stripTypeScriptTypes(
     source
       .replace(/^import[^\n]*\n/gm, '')
@@ -50,7 +50,7 @@ function loadExtension(resolvePackageJson) {
     'dirname',
     'join',
     'importMetaUrl',
-    `${body}\nreturn bladebroExtension;`,
+    `${body}\nreturn webjitsuExtension;`,
   );
   return factory(
     requireShim,
@@ -122,16 +122,16 @@ function mcpClient(command, args) {
 }
 
 try {
-  const binary = resolve(process.env.BLADEBRO || 'target/release/bladebro');
+  const binary = resolve(process.env.WEBJITSU || 'target/release/webjitsu');
   assert(existsSync(binary), `binary to exercise: ${binary}`);
   const osName = { linux: 'linux', darwin: 'darwin', win32: 'windows' }[process.platform];
   const cpuName = { x64: 'x64', arm64: 'arm64' }[process.arch];
-  const expectedPackage = `bladebro-${osName}-${cpuName}`;
+  const expectedPackage = `webjitsu-${osName}-${cpuName}`;
   const pkgDir = join(root, expectedPackage);
   mkdirSync(pkgDir, { recursive: true });
-  writeFileSync(join(pkgDir, 'package.json'), JSON.stringify({ name: expectedPackage, main: 'bladebro' }));
-  if (process.platform === 'win32') copyFileSync(binary, join(pkgDir, 'bladebro'));
-  else symlinkSync(binary, join(pkgDir, 'bladebro'));
+  writeFileSync(join(pkgDir, 'package.json'), JSON.stringify({ name: expectedPackage, main: 'webjitsu' }));
+  if (process.platform === 'win32') copyFileSync(binary, join(pkgDir, 'webjitsu'));
+  else symlinkSync(binary, join(pkgDir, 'webjitsu'));
 
   // 1. Loading the extension registers exactly one direct MCP server, aimed at the real binary.
   const asked = [];
@@ -139,9 +139,9 @@ try {
   loadExtension((name) => { asked.push(name); return join(pkgDir, 'package.json'); })(mock.api);
   assert.equal(mock.servers.length, 1, 'exactly one server');
   const { name, config } = mock.servers[0];
-  assert.equal(name, 'bladebro');
+  assert.equal(name, 'webjitsu');
   assert.deepEqual(asked, [`${expectedPackage}/package.json`], 'resolves the platform package, nothing else');
-  assert.equal(config.command, join(pkgDir, 'bladebro'));
+  assert.equal(config.command, join(pkgDir, 'webjitsu'));
   assert.deepEqual(config.args, ['mcp']);
   assert.equal(config.exposure, 'direct', 'tools must be declared to the model');
   assert.ok(config.timeout >= 180, "timeout must cover the driver's long operations");
@@ -188,7 +188,7 @@ try {
   missing.events.session_start({}, { ui: { notify: (message, level) => notices.push({ message, level }) } });
   assert.equal(notices.length, 1);
   assert.equal(notices[0].level, 'error');
-  assert.match(notices[0].message, /npm install bladebro/);
+  assert.match(notices[0].message, /npm install webjitsu/);
   pass('missing binary: no registration, visible reason at session start');
 
   console.log(`PI STDIO ${checks}/${checks}`);

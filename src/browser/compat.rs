@@ -78,7 +78,7 @@ pub(super) fn agent_extra_flags() -> Result<Vec<String>> {
         if !extra.iter().any(|flag| flag == "--incognito") {
             extra.push("--incognito".into());
         }
-        eprintln!("[bladebro] incognito compatibility: cookies and named sessions remain supported; history/cache and automatic localStorage persistence are unavailable. BLADE_INCOGNITO=0 disables automatic Raspberry Pi OS trixie compatibility (restart the client/daemon).");
+        eprintln!("[webjitsu] incognito compatibility: cookies and named sessions remain supported; history/cache and automatic localStorage persistence are unavailable. BLADE_INCOGNITO=0 disables automatic Raspberry Pi OS trixie compatibility (restart the client/daemon).");
     }
     Ok(extra)
 }

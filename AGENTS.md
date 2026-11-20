@@ -2,18 +2,18 @@
 
 Canonical engineering guide for coding agents in this repository. Read [CONTRIBUTING.md](CONTRIBUTING.md) alongside this file; if they ever conflict, `CONTRIBUTING.md` wins.
 
-Bladebro is a single Rust binary (`bladebro`) providing an MCP stdio server (`bladebro mcp`) and CLI (`bladebro nav`, `see`, `act`, …) that drive stock Chrome/Chromium over the Chrome DevTools Protocol (CDP). No Node.js runtime in the driver, no Playwright/Puppeteer, no internal LLM.
+WebJitsu is a single Rust binary (`webjitsu`) providing an MCP stdio server (`webjitsu mcp`) and CLI (`webjitsu nav`, `see`, `act`, …) that drive stock Chrome/Chromium over the Chrome DevTools Protocol (CDP). No Node.js runtime in the driver, no Playwright/Puppeteer, no internal LLM.
 
 - **Perception as a side-effect of acting**: a persistent Live Page Model reads the live DOM (including open shadow roots and visible same-origin frames) and returns outcome verdicts + compact deltas instead of full-page snapshots.
 - **Stable, self-healing refs (`e1`, `e2`, …)**: keyed by `framePath|role|name|rank` plus an FNV-1a structural fingerprint so refs survive React/Vue/Angular re-renders and retired refs heal through the ref graveyard.
-- **Two lanes**: the default `agent` lane launches an owned Chromium + seasoned profile with full stealth; the real-browser lane (`bladebro rb on`) drives a user's installed Chromium-family browser (`auto`/`clone`/`profile`/`attach`) with page injection completely disabled.
+- **Two lanes**: the default `agent` lane launches an owned Chromium + seasoned profile with full stealth; the real-browser lane (`webjitsu rb on`) drives a user's installed Chromium-family browser (`auto`/`clone`/`profile`/`attach`) with page injection completely disabled.
 
 ## Hard Invariants
 
 Violating any rule below is an automatic rejection:
 
 1. **Five tools forever (`act`, `see`, `state`, `run`, `vision`).** New capabilities ship as parameters or behaviors on those five; MCP and CLI share one handler surface.
-2. **Deterministic driver only.** Zero LLM/model calls inside Bladebro.
+2. **Deterministic driver only.** Zero LLM/model calls inside WebJitsu.
 3. **No general CAPTCHA solver.** Detect walls, return an honest `blocked:` verdict, and run the remediation ladder. Sole exception: a site-gated adapter clicking a human-trivial single checkbox (e.g., Reddit's humanity check) via normal humanized input; image/grid challenges are never solved.
 4. **Stock Chromium engine.** Never fork Chromium.
 5. **Native-Proxy stealth (`agent` lane) and zero-patch `real` lane.** Every injected function/getter wraps the native original in a `Proxy` that delegates first (preserving WebIDL conversions, receiver errors, microtask rejection order, `{length, name}` own keys, and the cycle-exact `setPrototypeOf` shield guarded by `shell-torture` in `tests/vectors.html`). Never patch `Function.prototype.toString`. Install a mask only when the native value is an automation tell. Real-browser mode (`rb`) runs with page injection off.
@@ -54,15 +54,15 @@ cargo check                                               # fast type-check (~3s
 cargo fmt --check                                         # formatting check
 cargo clippy --release --all-targets -- -D warnings       # zero warnings across all targets
 cargo test --profile gate                                 # unit + integration suite (release codegen, no LTO)
-cargo build --profile gate                                # fast binary for probes → ./target/gate/bladebro
-cargo build --release                                     # shipped LTO binary → ./target/release/bladebro
+cargo build --profile gate                                # fast binary for probes → ./target/gate/webjitsu
+cargo build --release                                     # shipped LTO binary → ./target/release/webjitsu
 ```
 
 Run **only** the live instrument in [tools/README.md](tools/README.md) that covers what you changed (reproduce before fixing; verify from live readback, never exit code alone). The full probe matrix runs remotely in parallel via `.github/workflows/probes.yml`.
 
-| Touched area | Run locally (with `BLADEBRO=$PWD/target/gate/bladebro`) |
+| Touched area | Run locally (with `WEBJITSU=$PWD/target/gate/webjitsu`) |
 |---|---|
-| Stealth / browser flags / injection | `BLADE_HOME=$(mktemp -d) $BLADEBRO audit` (0 `FAIL`, stable stamps) + `python3 tools/diff_oracle/oracle.py` (`divergent: 0`) + live check on sannysoft / incolumitas / creepjs |
+| Stealth / browser flags / injection | `BLADE_HOME=$(mktemp -d) $WEBJITSU audit` (0 `FAIL`, stable stamps) + `python3 tools/diff_oracle/oracle.py` (`divergent: 0`) + live check on sannysoft / incolumitas / creepjs |
 | Click / type / fill / select / reads / shadow DOM | `python3 tools/qol_probe/run.py` (122 assertions) |
 | Addressing, waits, dialogs, PDFs, proxy redaction | `python3 tools/gap44/probe.py 1 && python3 tools/gap44/probe.py 2` |
 | MCP schemas, preflight, `run`, control inspection | `python3 tools/reliability_probe/agent_contract.py` + `agent_ux.py` |
@@ -72,10 +72,10 @@ Run **only** the live instrument in [tools/README.md](tools/README.md) that cove
 ## Conventions & Sharp Edges
 
 - **Token-lean outputs**: every tool schema word, verdict, and error string is paid per token by calling LLMs. Keep outputs compact, actionable, and delta-first.
-- **`stdout` is a machine contract**: `--json` emits one JSON object; `bladebro mcp` emits pure JSON-RPC; logs go to `stderr`; ANSI styling in `src/ui.rs` stays TTY-gated.
+- **`stdout` is a machine contract**: `--json` emits one JSON object; `webjitsu mcp` emits pure JSON-RPC; logs go to `stderr`; ANSI styling in `src/ui.rs` stays TTY-gated.
 - **Injected JS syntax**: assembled scripts are checked with `node --check` in tests because one JS syntax error silently disables all page patches. Inspect assembled output via `BLADE_DUMP_INJECT=/tmp/inj.js` + `node --check /tmp/inj.js`.
 - **Raw strings in `src/cli/help.rs`**: help text uses `r#"…"#` — never put `"#` (e.g. `"#id"`) inside a help block.
 - **No `unwrap`/`expect` in non-test code** unless locally invariant-guarded; propagate context via `anyhow`/`thiserror`.
-- **Restart daemons after rebuilds**: a live daemon or `mcp` process holds the old binary inode — run `bladebro stop` before manual CLI testing.
+- **Restart daemons after rebuilds**: a live daemon or `mcp` process holds the old binary inode — run `webjitsu stop` before manual CLI testing.
 - **Ask before**: adding Cargo dependencies (binary stays ~7–8 MB), changing MCP tool schemas or perception output formats, altering stealth injection architecture, or editing `npm/`.
 - **PRs & maintainer-only boundaries**: use Conventional Commits (`feat:`, `fix:`, `stealth:`, `perf:`, `docs:`, `chore:`), keep PRs scoped to one concern, and fill out `.github/PULL_REQUEST_TEMPLATE.md` with verification commands and before/after numbers. Never bump versions, edit `CHANGELOG.md`, create tags, or touch `scripts/` release tooling — releases are maintainer-only.

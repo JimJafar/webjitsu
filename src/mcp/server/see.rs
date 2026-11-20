@@ -61,7 +61,7 @@ fn pdf_read_message(url: &str) -> String {
 }
 
 /// `see` as a tool call (MCP and CLI/daemon): `url=` navigates first, then
-/// reads - the `bladebro see <url>` contract, and what `retry_safe` already
+/// reads - the `webjitsu see <url>` contract, and what `retry_safe` already
 /// assumes. The MCP dispatch used to skip this and silently read whatever page
 /// was current. Steps and act aliases call [`handle_see`] directly because
 /// they navigate on url= themselves (batch/run see steps, act pre-navigation
@@ -815,7 +815,7 @@ mod pdf_read_tests {
         assert!(PDF_STATE_EXPR.contains(".pdf"));
         assert!(PDF_STATE_EXPR.contains("contentType"));
         // node --check (skipped when node is unavailable).
-        let dir = std::env::temp_dir().join("bladebro-pdf-tests");
+        let dir = std::env::temp_dir().join("webjitsu-pdf-tests");
         if std::fs::create_dir_all(&dir).is_err() {
             return;
         }

@@ -1,12 +1,12 @@
-//! Self-update, rollback, and system diagnostics for Bladebro.
+//! Self-update, rollback, and system diagnostics for WebJitsu.
 //!
 //! Commands:
-//! - `bladebro -u` / `bladebro update` — check for updates, download, swap
-//! - `bladebro -u --check` — dry run: check for updates, don't install
-//! - `bladebro -u --force` — force update even if same version
-//! - `bladebro -doc` / `bladebro doctor` — diagnose system, suggest fixes
-//! - `bladebro --rollback` — restore previous binary after broken update
-//! - `bladebro -v` / `bladebro --version` — show version + update status
+//! - `webjitsu -u` / `webjitsu update` — check for updates, download, swap
+//! - `webjitsu -u --check` — dry run: check for updates, don't install
+//! - `webjitsu -u --force` — force update even if same version
+//! - `webjitsu -doc` / `webjitsu doctor` — diagnose system, suggest fixes
+//! - `webjitsu --rollback` — restore previous binary after broken update
+//! - `webjitsu -v` / `webjitsu --version` — show version + update status
 
 pub mod doctor;
 pub mod download;
@@ -30,7 +30,7 @@ const GITHUB_REPO: &str = "dondai44423/bladebro";
 /// Dispatch an update-hub command.
 pub async fn run(cmd: &str, args: &[String]) -> Result<()> {
     // FORK (`fork::SELF_UPDATE_DISABLED`, see FORK.md): self-update and
-    // rollback are refused before anything else. `bladebro update` downloads
+    // rollback are refused before anything else. `webjitsu update` downloads
     // upstream's release and swaps it into this exact path, which would put the
     // real-browser lane back under a user who disabled it — and the same for a
     // backup restore. Updating this build is a source operation (FORK.md).
@@ -46,13 +46,13 @@ pub async fn run(cmd: &str, args: &[String]) -> Result<()> {
         "version" | "-v" | "--version" => show_version().await,
         other => Err(BladeError::Other(format!(
             "unknown command: {other}\n  \
-             Usage: bladebro <mcp|audit|see|act|state|run|nav|probe|targets|version>\n  \
-             Update hub: bladebro <update|-u|doctor|-doc|rollback|--rollback|-v|--version>"
+             Usage: webjitsu <mcp|audit|see|act|state|run|nav|probe|targets|version>\n  \
+             Update hub: webjitsu <update|-u|doctor|-doc|rollback|--rollback|-v|--version>"
         ))),
     }
 }
 
-/// `bladebro update` / `bladebro -u` — check for updates, download, swap.
+/// `webjitsu update` / `webjitsu -u` — check for updates, download, swap.
 ///
 /// Flags:
 ///   --check / -c  — dry run: check but don't install
@@ -169,7 +169,7 @@ async fn update(args: &[String]) -> Result<()> {
             &[
                 ("reason", format!("Installed via {channel}; overwriting in-place would drift from your package manager")),
                 ("upgrade", cmd.into()),
-                ("override", "bladebro -u --force (forces direct binary swap)".into()),
+                ("override", "webjitsu -u --force (forces direct binary swap)".into()),
             ],
         );
         return Ok(());
@@ -220,7 +220,7 @@ async fn update(args: &[String]) -> Result<()> {
             return Err(BladeError::Other(format!(
                 "downloaded binary failed verification: {e}\n  \
                  The binary may be for the wrong architecture or corrupted.\n  \
-                 Try: npm install -g bladebro"
+                 Try: npm install -g webjitsu"
             )));
         }
     }
@@ -243,7 +243,7 @@ async fn update(args: &[String]) -> Result<()> {
     let mut rows = vec![
         ("release", format!("v{current}  →  {}", latest.tag_name)),
         ("vault", backup.display().to_string()),
-        ("rollback", "bladebro --rollback".into()),
+        ("rollback", "webjitsu --rollback".into()),
     ];
     if daemon_stopped {
         rows.push((
@@ -268,7 +268,7 @@ async fn update(args: &[String]) -> Result<()> {
     Ok(())
 }
 
-/// `bladebro -v` / `bladebro --version` — show version identity card + live
+/// `webjitsu -v` / `webjitsu --version` — show version identity card + live
 /// release status.
 ///
 /// Uses `fetch_latest_tag()` (non-rate-limited GitHub HEAD redirect + npm).
@@ -278,7 +278,7 @@ async fn update(args: &[String]) -> Result<()> {
 /// - ahead:   local build is newer than the latest release
 async fn show_version() -> Result<()> {
     let platform = version::platform_label();
-    // FORK: name this build in its own output, so `bladebro -v` (and anything
+    // FORK: name this build in its own output, so `webjitsu -v` (and anything
     // pasted into a bug report) shows a patched binary, not an upstream one.
     let channel = format!(
         "{} · fork {}",

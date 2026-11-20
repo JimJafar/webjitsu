@@ -1,0 +1,28 @@
+{
+  "name": "webjitsu-linux-arm64",
+  "version": "4.8.2",
+  "description": "WebJitsu binary for Linux ARM64 (aarch64)",
+  "license": "Apache-2.0",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "main": "webjitsu",
+  "files": [
+    "webjitsu"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JimJafar/webjitsu.git"
+  },
+  "funding": {
+    "url": "https://github.com/dondai44423/bladebro#sponsors"
+  },
+  "upstream": {
+    "name": "bladebro",
+    "repository": "https://github.com/dondai44423/bladebro",
+    "note": "WebJitsu is a fork; see FORK.md"
+  }
+}

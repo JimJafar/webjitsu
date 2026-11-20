@@ -9,7 +9,7 @@ use std::path::PathBuf;
 /// The single pause-refusal error, so every gate speaks identically.
 pub fn paused_error() -> BladeError {
     BladeError::Other(
-        "paused — manual control is claimed (`bladebro rb resume` to hand it back)".into(),
+        "paused — manual control is claimed (`webjitsu rb resume` to hand it back)".into(),
     )
 }
 

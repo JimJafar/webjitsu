@@ -574,7 +574,7 @@ mod script_syntax_tests {
             eprintln!("node not available — skipping {name} syntax check");
             return;
         }
-        let path = std::env::temp_dir().join(format!("bladebro-js-check-{name}.js"));
+        let path = std::env::temp_dir().join(format!("webjitsu-js-check-{name}.js"));
         std::fs::write(&path, js).expect("write js fixture");
         let out = Command::new("node")
             .arg("--check")
@@ -602,7 +602,7 @@ mod script_syntax_tests {
             eprintln!("node not available — skipping {name}");
             return None;
         }
-        let path = std::env::temp_dir().join(format!("bladebro-js-run-{name}.js"));
+        let path = std::env::temp_dir().join(format!("webjitsu-js-run-{name}.js"));
         std::fs::write(&path, js).expect("write js fixture");
         let out = Command::new("node").arg(&path).output().expect("run node");
         let _ = std::fs::remove_file(&path);

@@ -2,7 +2,7 @@
 """Owned-browser regression checks for navigation, setup and OTR contexts.
 
 Each invocation owns its HTTP server, daemon/MCP processes and disposable
-homes. Set BLADEBRO to test an exact candidate; no user profile is read.
+homes. Set WEBJITSU to test an exact candidate; no user profile is read.
 """
 import http.server
 import json
@@ -13,7 +13,7 @@ import tempfile
 import threading
 import time
 
-BINARY = os.environ.get('BLADEBRO', str(Path(__file__).resolve().parents[2] / 'target/release/bladebro'))
+BINARY = os.environ.get('WEBJITSU', str(Path(__file__).resolve().parents[2] / 'target/release/webjitsu'))
 CHECKS = 0
 REQUESTS = []
 EFFECTS = []

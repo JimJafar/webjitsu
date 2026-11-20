@@ -194,7 +194,7 @@ pub async fn restore(cdp: &CdpSession) -> Result<()> {
         // cookies (the next snapshot records the store as it really is) and
         // say how many were lost.
         eprintln!(
-            "[bladebro] login restore: {missing}/{} saved cookies were not restored (rejected or did not read back); continuing without them",
+            "[webjitsu] login restore: {missing}/{} saved cookies were not restored (rejected or did not read back); continuing without them",
             list.len()
         );
     }
@@ -241,7 +241,7 @@ async fn restore_cookies(cdp: &CdpSession, list: &[SavedCookie]) -> Result<usize
                 }
             }
             Err(e) => eprintln!(
-                "[bladebro] logins restore call failed ({} cookies): {e}",
+                "[webjitsu] logins restore call failed ({} cookies): {e}",
                 cookies.len()
             ),
         }

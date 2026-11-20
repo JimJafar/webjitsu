@@ -79,7 +79,7 @@ impl Fixture {
     }
 
     fn run(&mut self, args: &[&str], ok: bool) -> Value {
-        let out = Command::new(env!("CARGO_BIN_EXE_bladebro"))
+        let out = Command::new(env!("CARGO_BIN_EXE_webjitsu"))
             .args(["hermes", "--json", "--hermes"])
             .arg(std::env::current_exe().unwrap())
             .args(args)
@@ -138,7 +138,7 @@ fn main() {
     write(&path, &baseline);
     let mut f = Fixture { root, checks: 0 };
     f.run(&["on"], true);
-    let installed = read(&path)["mcp_servers"]["bladebro"].clone();
+    let installed = read(&path)["mcp_servers"]["webjitsu"].clone();
     f.check(
         installed["args"] == json!(["mcp"]),
         "ordinary MCP command configured",
@@ -159,7 +159,7 @@ fn main() {
             "explicit absolute path reaches the same directory through OS aliases",
         );
     }
-    let recovery = f.root.join(".bladebro-browser/state.json");
+    let recovery = f.root.join(".webjitsu-browser/state.json");
     let saved = std::fs::read(&recovery).unwrap();
     f.run(&["on"], true);
     f.check(
@@ -171,7 +171,7 @@ fn main() {
         status["text"]
             .as_str()
             .unwrap()
-            .contains("Bladebro configured"),
+            .contains("WebJitsu configured"),
         "status uses persisted state",
     );
     let mut edited = read(&path);
@@ -194,12 +194,12 @@ fn main() {
 
     let mut prior = baseline.clone();
     prior["agent"]["disabled_toolsets"] = json!(["tts", "browser"]);
-    prior["mcp_servers"]["bladebro"] = json!({"enabled":false,"command":"old", "env":{"TOKEN":"private-sentinel","CHROME_PATH":"configured-chrome"}});
+    prior["mcp_servers"]["webjitsu"] = json!({"enabled":false,"command":"old", "env":{"TOKEN":"private-sentinel","CHROME_PATH":"configured-chrome"}});
     write(&path, &prior);
     f.run(&["on"], true);
     f.check(
-        read(&path)["mcp_servers"]["bladebro"]["env"]["TOKEN"] == "private-sentinel"
-            && read(&path)["mcp_servers"]["bladebro"]["env"]["CHROME_PATH"] == "configured-chrome",
+        read(&path)["mcp_servers"]["webjitsu"]["env"]["TOKEN"] == "private-sentinel"
+            && read(&path)["mcp_servers"]["webjitsu"]["env"]["CHROME_PATH"] == "configured-chrome",
         "prior server environment survives the switch",
     );
     f.run(&["off"], true);
@@ -209,7 +209,7 @@ fn main() {
     );
 
     let mut oversized = baseline.clone();
-    oversized["mcp_servers"]["bladebro"] =
+    oversized["mcp_servers"]["webjitsu"] =
         json!({"enabled":false,"env":{"LARGE":"x".repeat(140 * 1024)}});
     write(&path, &oversized);
     f.run(&["on"], false);
@@ -241,14 +241,14 @@ fn main() {
 
     f.run(&["on"], true);
     let mut conflict = read(&path);
-    conflict["mcp_servers"]["bladebro"]["command"] = json!("user-edited");
+    conflict["mcp_servers"]["webjitsu"]["command"] = json!("user-edited");
     write(&path, &conflict);
     f.run(&["off"], false);
     f.check(
         read(&path) == conflict && recovery.exists(),
         "edited MCP entry refuses restore without writes",
     );
-    conflict["mcp_servers"]["bladebro"] = installed;
+    conflict["mcp_servers"]["webjitsu"] = installed;
     write(&path, &conflict);
     f.run(&["off"], true);
 

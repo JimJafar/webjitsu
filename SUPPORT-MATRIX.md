@@ -35,7 +35,7 @@ See [tools/README.md](tools/README.md) for exact invocations and pass criteria.
 | Addressing, readiness waits, dialogs, templates, PDFs, proxy redaction | `tools/gap44/probe.py` + `cargo test --profile gate` |
 | Cross-origin and `body: true` downloads | `tools/reliability_probe/download.py` |
 | Geometry coherence & fail-closed WebRTC under proxy | `tools/gap44/webrtc_proxy.py` |
-| Stealth vectors & cross-restart stamp stability | `bladebro audit` |
+| Stealth vectors & cross-restart stamp stability | `webjitsu audit` |
 | Stock-Chrome page parity (`agent` and `real` lanes) | `tools/diff_oracle/oracle.py` (`--lane real` for zero-mask parity) |
 | Cold-start stability across all 5 lanes | `tools/lane_matrix.py all 5` |
 | Real-browser attach → agent-lane switch | `tools/rb_live/attach_drift.py` |

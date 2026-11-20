@@ -2,7 +2,7 @@
 """Agent-facing parity and mutation-honesty checks, with owned fixtures only.
 
 Use --baseline to retain every failed check instead of stopping on failure.
-BLADEBRO chooses the actual binary under test; POLISH_OUT retains receipts.
+WEBJITSU chooses the actual binary under test; POLISH_OUT retains receipts.
 """
 import http.server
 import json
@@ -15,7 +15,7 @@ import tempfile
 import threading
 import time
 
-BINARY = os.environ.get('BLADEBRO', str(Path(__file__).resolve().parents[2] / 'target/release/bladebro'))
+BINARY = os.environ.get('WEBJITSU', str(Path(__file__).resolve().parents[2] / 'target/release/webjitsu'))
 OUT = Path(os.environ.get('POLISH_OUT', 'work/release463/polish.json'))
 OUT.parent.mkdir(parents=True, exist_ok=True)
 checks = []

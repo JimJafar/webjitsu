@@ -40,7 +40,7 @@ impl Drop for DownloadedBinary {
 /// dir (e.g. group-writable /usr/local/bin) let a local attacker pre-place
 /// a symlink and have the "downloaded binary" written over an arbitrary
 /// victim file — which the updater then EXECUTES during verification.
-const TMP_PREFIX: &str = ".bladebro-update";
+const TMP_PREFIX: &str = ".webjitsu-update";
 
 /// The first release tag whose assets MUST ship .sha256 checksums.
 /// Targets at or above this version fail the update when no checksum can
@@ -85,7 +85,7 @@ async fn fetch_expected_sha256(asset_url: &str, tag: &str) -> Result<Option<Stri
             "cannot verify update integrity: {why}.\n\
              Release {tag} must ship a .sha256 checksum next to every binary.\n\
              The download was NOT installed. Update via npm instead:\n\
-             npm install -g bladebro"
+             npm install -g webjitsu"
         ))
     };
 
@@ -258,7 +258,7 @@ pub async fn download_binary(release: &version::Release) -> Result<DownloadedBin
         };
         return Err(BladeError::Other(format!(
             "no binary for {} in release {}. Available assets: {}\n\n\
-             To update via npm:  npm install -g bladebro\n\
+             To update via npm:  npm install -g webjitsu\n\
              Or build from source:  git clone https://github.com/dondai44423/bladebro.git && cd bladebro && cargo build --release",
             version::platform_label(),
             release.tag_name,
@@ -811,9 +811,9 @@ pub(crate) async fn verify_exe_runs(path: &std::path::Path) -> Result<()> {
         String::from_utf8_lossy(&output.stdout),
         String::from_utf8_lossy(&output.stderr)
     );
-    if !combined.to_lowercase().contains("bladebro") {
+    if !combined.to_lowercase().contains("webjitsu") {
         return Err(BladeError::Other(
-            "binary ran but doesn't identify as bladebro".into(),
+            "binary ran but doesn't identify as webjitsu".into(),
         ));
     }
     Ok(())
@@ -861,7 +861,7 @@ mod tests {
         std::fs::write(&marker, b"owned").unwrap();
         std::fs::write(
             &path,
-            "#!/bin/sh\nwhile [ -e \"$0.waiting\" ]; do :; done\nprintf 'bladebro fixture\\n'\n",
+            "#!/bin/sh\nwhile [ -e \"$0.waiting\" ]; do :; done\nprintf 'webjitsu fixture\\n'\n",
         )
         .unwrap();
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o700)).unwrap();
@@ -891,13 +891,13 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
         for (body, accepted) in [
             (
-                "[ \"$BLADE_NO_UPDATE_CHECK\" = 1 ] || exit 7\nprintf 'bladebro fixture\\n'"
+                "[ \"$BLADE_NO_UPDATE_CHECK\" = 1 ] || exit 7\nprintf 'webjitsu fixture\\n'"
                     .to_string(),
                 true,
             ),
-            ("printf 'bladebro fixture\\n'\nexit 9".to_string(), false),
+            ("printf 'webjitsu fixture\\n'\nexit 9".to_string(), false),
             ("printf 'different program\\n'".to_string(), false),
-            (format!("printf '{}'", "bladebro".repeat(9000)), false),
+            (format!("printf '{}'", "webjitsu".repeat(9000)), false),
         ] {
             let path = create_secure_tmp(&std::env::temp_dir()).unwrap();
             std::fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();
@@ -947,7 +947,7 @@ mod tests {
         };
         let stale = dir.join(format!("{TMP_PREFIX}-1-1700000000000000000-7.tmp"));
         let fresh = dir.join(format!("{TMP_PREFIX}-2-1700000000000000001-8.tmp"));
-        let unrelated = dir.join("bladebro");
+        let unrelated = dir.join("webjitsu");
         for p in [&stale, &fresh, &unrelated] {
             std::fs::write(p, b"x").unwrap();
         }
@@ -1057,7 +1057,7 @@ mod tests {
     async fn single_pass_streaming_hash_matches_disk_sha256() {
         use sha2::{Digest, Sha256};
         let tmp = create_secure_tmp(&std::env::temp_dir()).unwrap();
-        let payload = "bladebro-single-pass-streaming-digest-payload";
+        let payload = "webjitsu-single-pass-streaming-digest-payload";
         let expected: String = Sha256::digest(payload.as_bytes())
             .iter()
             .map(|b| format!("{b:02x}"))
@@ -1198,7 +1198,7 @@ mod tests {
 
     #[test]
     fn verify_rejects_empty() {
-        let dir = std::env::temp_dir().join("bladebro-test-verify-empty");
+        let dir = std::env::temp_dir().join("webjitsu-test-verify-empty");
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("empty.bin");
         std::fs::write(&path, b"").unwrap();
@@ -1214,7 +1214,7 @@ mod tests {
 
     #[test]
     fn verify_rejects_tiny() {
-        let dir = std::env::temp_dir().join("bladebro-test-verify-tiny");
+        let dir = std::env::temp_dir().join("webjitsu-test-verify-tiny");
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("tiny.bin");
         std::fs::write(&path, b"ab").unwrap();
@@ -1230,7 +1230,7 @@ mod tests {
 
     #[test]
     fn verify_rejects_wrong_magic() {
-        let dir = std::env::temp_dir().join("bladebro-test-verify-magic");
+        let dir = std::env::temp_dir().join("webjitsu-test-verify-magic");
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("wrong.bin");
         let mut f = std::fs::File::create(&path).unwrap();
@@ -1248,7 +1248,7 @@ mod tests {
 
     #[test]
     fn verify_rejects_too_large() {
-        let dir = std::env::temp_dir().join("bladebro-test-verify-large");
+        let dir = std::env::temp_dir().join("webjitsu-test-verify-large");
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("large.bin");
         let mut f = std::fs::File::create(&path).unwrap();
@@ -1268,14 +1268,14 @@ mod tests {
     async fn checksum_transport_errors_retry_within_bounds_and_succeed() {
         let dir = std::env::temp_dir().join(format!("blade-checksum-retry-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let bin = dir.join("bladebro");
+        let bin = dir.join("webjitsu");
         std::fs::write(&bin, b"FAKE BINARY BYTES").unwrap();
         use sha2::{Digest, Sha256};
         let hash: String = Sha256::digest(b"FAKE BINARY BYTES")
             .iter()
             .map(|b| format!("{b:02x}"))
             .collect();
-        let body = format!("{hash}  bladebro\n");
+        let body = format!("{hash}  webjitsu\n");
         let (url, server) = http_fixture(vec![
             "".into(),
             "".into(),
@@ -1301,7 +1301,7 @@ mod tests {
     async fn checksum_permanent_failures_do_not_retry_and_fail_closed() {
         let dir = std::env::temp_dir().join(format!("blade-checksum-404-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let bin = dir.join("bladebro");
+        let bin = dir.join("webjitsu");
         std::fs::write(&bin, b"FAKE").unwrap();
         let (url, server) = http_fixture(vec![
             "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".into(),

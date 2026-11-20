@@ -390,7 +390,7 @@ pub(crate) fn endpoint_owned_by_own_browser(port: u16) -> bool {
 /// `--user-data-dir=<dir>` (the spelling `flags` passes). Teardown uses it to
 /// reach browser processes that left the launcher's process group — Flatpak's
 /// portal spawns Chromium's zygote and utility sandboxes in its own session.
-/// A session dir is unique to one bladebro process, so a match is ours; the
+/// A session dir is unique to one webjitsu process, so a match is ours; the
 /// token must end at a separator so `sess-1` never matches `sess-10`.
 #[cfg(target_os = "linux")]
 pub(crate) fn processes_on_user_data_dir(dir: &std::path::Path) -> Vec<u32> {
@@ -511,7 +511,7 @@ mod tests {
     }
 
     /// Issue #57: an AppImage's AppRun forks the real browser instead of
-    /// exec'ing it, so the debug port is held by a child of the PID bladebro
+    /// exec'ing it, so the debug port is held by a child of the PID webjitsu
     /// spawned. The ownership gate must accept that subtree and still refuse
     /// a listener that belongs to a different process tree.
     #[cfg(target_os = "linux")]

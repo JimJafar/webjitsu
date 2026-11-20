@@ -1031,7 +1031,7 @@ mod tests {
             .output()
             .is_ok_and(|o| o.status.success())
         {
-            let path = std::env::temp_dir().join("bladebro-js-check-x-dom-collect.js");
+            let path = std::env::temp_dir().join("webjitsu-js-check-x-dom-collect.js");
             std::fs::write(&path, &js).expect("write js fixture");
             let out = std::process::Command::new("node")
                 .arg("--check")

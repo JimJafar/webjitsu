@@ -32,7 +32,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-BIN = ROOT / "target" / "release" / "bladebro"
+BIN = ROOT / "target" / "release" / "webjitsu"
 HOME = Path(tempfile.mkdtemp(prefix="blade-gap10-"))
 RESULTS = []
 

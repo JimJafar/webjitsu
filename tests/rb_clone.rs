@@ -1,4 +1,4 @@
-// FORK: every test in this file drives `bladebro rb`, whose lane this build removes
+// FORK: every test in this file drives `webjitsu rb`, whose lane this build removes
 // (see FORK.md). They are kept so the upstream coverage survives a rebase and a
 // future re-enable, and marked #[ignore] so the suite reports them honestly.
 
@@ -54,7 +54,7 @@ impl Fixture {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_bladebro"))
+        Command::new(env!("CARGO_BIN_EXE_webjitsu"))
             .args(["--json", "rb"])
             .args(args)
             .env("HOME", self.0.join("home"))
@@ -308,7 +308,7 @@ fn clone_sanitizes_crashed_preferences_and_skips_sessions_and_component_caches()
 fn audio_cli_defaults_muted_and_persists_opt_in_toggle() {
     let f = Fixture::new();
     let run_audio = |args: &[&str], env_audio: Option<&str>| -> Value {
-        let mut cmd = Command::new(env!("CARGO_BIN_EXE_bladebro"));
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_webjitsu"));
         cmd.arg("--json")
             .args(args)
             .env("HOME", f.0.join("home"))

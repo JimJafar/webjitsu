@@ -130,7 +130,7 @@ pub fn masthead(operation: &str, meta: &str) {
 
     if !super::enabled() {
         println!();
-        println!("BLADEBRO v{version} ({build}) — {operation} [{meta}]");
+        println!("WEBJITSU v{version} ({build}) — {operation} [{meta}]");
         println!("{}", "-".repeat(60));
         println!();
         return;
@@ -389,7 +389,7 @@ pub fn verdict_card(tone: Tone, title: &str, right_meta: &str, body: &[(&str, St
     println!();
 }
 
-/// Fields for the Mafia Don version identity card (`bladebro -v`).
+/// Fields for the Mafia Don version identity card (`webjitsu -v`).
 pub struct VersionCard<'a> {
     pub version: &'a str,
     pub build_id: &'a str,
@@ -401,7 +401,7 @@ pub struct VersionCard<'a> {
     pub action_cmd: Option<&'a str>,
 }
 
-/// Sleek Mafia Don version identity card for `bladebro -v` / `--version`.
+/// Sleek Mafia Don version identity card for `webjitsu -v` / `--version`.
 pub fn version_card(card: &VersionCard<'_>) {
     let VersionCard {
         version,
@@ -414,7 +414,7 @@ pub fn version_card(card: &VersionCard<'_>) {
         action_cmd,
     } = *card;
     if !super::enabled() {
-        println!("bladebro v{version} ({build_id})");
+        println!("webjitsu v{version} ({build_id})");
         println!("  platform: {platform}");
         println!("  install: {install_channel}");
         println!("  {status_detail}");

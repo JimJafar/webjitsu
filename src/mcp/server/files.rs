@@ -84,7 +84,7 @@ pub async fn handle_pdf(page: &mut Page, args: &Value) -> Result<String> {
             // Re-check before the write: the target must not have appeared
             // between validation and render.
             ensure_new_output(&pb).map_err(BladeError::Other)?;
-            // 0600 — consistent with every other bladebro-written file.
+            // 0600 — consistent with every other webjitsu-written file.
             crate::platform::secure_write_file(&pb, &bytes)
                 .map_err(|e| BladeError::Other(format!("pdf write: {e}")))?;
             pb.display().to_string()
@@ -230,7 +230,7 @@ fn describe_download(d: &DownloadInfo) -> std::result::Result<String, String> {
         )),
         _ => Err(format!(
             "download not on disk: the browser reported {} complete ({} bytes), but {} does not exist — \
-             the browser saved it where bladebro cannot read it (a sandboxed browser without access \
+             the browser saved it where webjitsu cannot read it (a sandboxed browser without access \
              to the downloads dir). For a URL that needs no login, retry with body=true.\nfrom: {}",
             d.filename, d.received_bytes, d.path, d.url
         )),
@@ -475,7 +475,7 @@ mod download_correlation_tests {
             state: state.into(),
             received_bytes: 10,
             total_bytes: 10,
-            path: format!("/tmp/bladebro-test/{name}"),
+            path: format!("/tmp/webjitsu-test/{name}"),
         }
     }
 

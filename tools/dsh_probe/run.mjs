@@ -1,4 +1,4 @@
-// Real Cordis + native MCP bridge + real Bladebro/Chromium; no model requests.
+// Real Cordis + native MCP bridge + real WebJitsu/Chromium; no model requests.
 // DSH_RUNTIME points at an installed harness project (containing node_modules).
 import assert from 'node:assert/strict';
 import childProcess from 'node:child_process';
@@ -30,8 +30,8 @@ const { default: Tools } = await load('@deepseek-ai/dsh-tools');
 const { default: SystemPrompt } = await load('@deepseek-ai/dsh-system-prompt');
 const { default: Attachments } = await load('@deepseek-ai/dsh-attachment-local');
 const { LlmRuntime, LlmAdapter } = await load('@deepseek-ai/dsh-llm');
-const plugin = await import(pathToFileURL(host.resolve('bladebro/dsh-plugin.mjs')).href);
-const { resolveBinary } = host('bladebro/binary.cjs');
+const plugin = await import(pathToFileURL(host.resolve('webjitsu/dsh-plugin.mjs')).href);
+const { resolveBinary } = host('webjitsu/binary.cjs');
 let checks = 0;
 let lastCall;
 const diagnostic = value => JSON.stringify(value, (key, value) =>
@@ -89,7 +89,7 @@ const call = async (tool, args, extra = {}) => {
   const started = Date.now();
   const result = await ctx.tools.execute({
     signal: new AbortController().signal, callId: `probe-${++id}`,
-    name: `mcp__bladebro__${tool}`, arguments: args, ...extra,
+    name: `mcp__webjitsu__${tool}`, arguments: args, ...extra,
   });
   // Only this probe's isolated fixture data; preserve errors before cleanup.
   lastCall = { tool, args, elapsed_ms: Date.now() - started, result };
@@ -97,9 +97,9 @@ const call = async (tool, args, extra = {}) => {
 };
 const text = r => r.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
 const config = {};
-if (process.env.BLADEBRO) {
-  const executable = join(scratch, 'Bladebro 日本語 tool' + (process.platform === 'win32' ? '.exe' : ''));
-  await copyFile(resolve(process.env.BLADEBRO), executable);
+if (process.env.WEBJITSU) {
+  const executable = join(scratch, 'WebJitsu 日本語 tool' + (process.platform === 'win32' ? '.exe' : ''));
+  await copyFile(resolve(process.env.WEBJITSU), executable);
   await chmod(executable, 0o755);
   config.binaryPath = executable;
 }
@@ -116,8 +116,8 @@ try {
   ctx.llm.registerAdapter(['fixture'], new ImageMetadata());
   check('fresh registry has zero tools', ctx.tools.schemas().length === 0);
   check('packaged binary resolves independently of PATH and matches this build',
-    resolveBinary().includes('bladebro-') && (!process.env.BLADEBRO ||
-      (await readFile(resolveBinary())).equals(await readFile(resolve(process.env.BLADEBRO)))));
+    resolveBinary().includes('webjitsu-') && (!process.env.WEBJITSU ||
+      (await readFile(resolveBinary())).equals(await readFile(resolve(process.env.WEBJITSU)))));
   await assert.rejects(() => plugin.apply(ctx, { binaryPath: 'relative' }), /absolute/); checks++;
   await assert.rejects(() => plugin.apply(ctx, { wrong: true }), /unknown/); checks++;
   await assert.rejects(() => plugin.apply(ctx, []), /object/); checks++;
@@ -126,12 +126,12 @@ try {
   await broken.dispose();
   check('failed handshake leaves no registered tools', ctx.tools.schemas().length === 0);
   const fiber = await ctx.plugin(plugin, config);
-  const names = ['act', 'see', 'state', 'run', 'vision'].map(n => `mcp__bladebro__${n}`).sort();
+  const names = ['act', 'see', 'state', 'run', 'vision'].map(n => `mcp__webjitsu__${n}`).sort();
   check('exact five tools registered through native bridge', JSON.stringify(ctx.tools.schemas().map(t => t.name).sort()) === JSON.stringify(names));
   const manual = JSON.parse(childProcess.execFileSync(config.binaryPath || resolveBinary(), ['help', '--json'], { encoding: 'utf8' }));
   const definitions = manual.tools;
   for (const schema of ctx.tools.schemas()) {
-    const original = definitions.find(t => 'mcp__bladebro__' + t.name === schema.name);
+    const original = definitions.find(t => 'mcp__webjitsu__' + t.name === schema.name);
     assert.deepEqual(schema.parameters, original.inputSchema ?? original.input_schema);
     check(`live schema and description parity: ${schema.name}`, schema.description === original.description);
   }
@@ -202,9 +202,9 @@ try {
   check('next observation works after cancellation', !result.isError && text(result).includes('DSH_RECEIPT_1'));
   const old = children.find(c => c.exitCode === null && c.signalCode === null);
   const generationCount = children.length;
-  const oldDefinition = ctx.tools.get('mcp__bladebro__act');
+  const oldDefinition = ctx.tools.get('mcp__webjitsu__act');
   old.kill();
-  await until(() => children.length > generationCount && ctx.tools.get('mcp__bladebro__act') !== oldDefinition && ctx.tools.schemas().length === 5 && children.at(-1).exitCode === null);
+  await until(() => children.length > generationCount && ctx.tools.get('mcp__webjitsu__act') !== oldDefinition && ctx.tools.schemas().length === 5 && children.at(-1).exitCode === null);
   result = await call('act', { action: 'navigate', url });
   check('native supervisor reconnects a killed MCP child', !result.isError && text(result).includes('Native DSH browser fixture'));
   check('crash recovery does not replay a submitted mutation', posts.length === 1);

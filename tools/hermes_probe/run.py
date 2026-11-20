@@ -11,7 +11,7 @@ import tempfile
 import threading
 
 p = argparse.ArgumentParser()
-p.add_argument('--binary', default='target/release/bladebro', type=Path)
+p.add_argument('--binary', default='target/release/webjitsu', type=Path)
 p.add_argument('--hermes', default=shutil.which('hermes'))
 p.add_argument('--hermes-root', type=Path, required=True)
 p.add_argument('--python', type=Path, required=True, help='Python from the installed Hermes dependency environment')
@@ -54,7 +54,7 @@ with tempfile.TemporaryDirectory(prefix='blade-hermes-probe-') as tmp:
     long_tmp.mkdir(mode=0o700)
     env['TMPDIR'] = str(long_tmp)
     cfg = home / 'config.yaml'
-    state = home / '.bladebro-browser/state.json'
+    state = home / '.webjitsu-browser/state.json'
     base = {'agent': {'disabled_toolsets': ['tts']}, 'mcp_servers': {
         'keep': {'command': 'never-run', 'enabled': False, 'env': {'SENTINEL': 'preserve'}}},
         'browser': {'backend': 'off'}, 'platform_toolsets': {'cli': ['hermes-cli']},
@@ -105,7 +105,7 @@ with tempfile.TemporaryDirectory(prefix='blade-hermes-probe-') as tmp:
     snapshot = state.read_bytes()
     cli('on', label='on-again')
     check(state.read_bytes() == snapshot, 'idempotent on retains original restore point')
-    check('Bladebro configured' in cli('status', label='status')['text'], 'status reports read-back state')
+    check('WebJitsu configured' in cli('status', label='status')['text'], 'status reports read-back state')
     server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -113,7 +113,7 @@ with tempfile.TemporaryDirectory(prefix='blade-hermes-probe-') as tmp:
         result = run([a.python, Path(__file__).with_name('runtime.py'), '--hermes-root', a.hermes_root,
                       '--url', f'http://127.0.0.1:{server.server_port}/'], 'runtime')
         check('PASS TOTAL ' in result.stdout, 'runtime reaches final assertions under a long TMPDIR')
-        check((root / 'browser').is_dir(), 'MCP uses the explicit disposable Bladebro home')
+        check((root / 'browser').is_dir(), 'MCP uses the explicit disposable WebJitsu home')
     finally:
         server.shutdown()
         server.server_close()
@@ -133,15 +133,15 @@ with tempfile.TemporaryDirectory(prefix='blade-hermes-probe-') as tmp:
     default_before = cfg.read_bytes()
     cli('on', '--profile', 'bladeprobe', label='profile-on')
     check(cfg.read_bytes() == default_before, 'named profile leaves default config untouched')
-    check('Bladebro configured' in cli('status', '--profile', 'bladeprobe', label='profile-status')['text'],
+    check('WebJitsu configured' in cli('status', '--profile', 'bladeprobe', label='profile-status')['text'],
           'named profile setup reads back independently')
     cli('off', '--profile', 'bladeprobe', label='profile-off')
     check(cfg.read_bytes() == default_before, 'named profile restore leaves default untouched')
 
-    # An existing custom Bladebro entry and prior browser suppression must survive.
+    # An existing custom WebJitsu entry and prior browser suppression must survive.
     custom = json.loads(json.dumps(base))
     custom['agent']['disabled_toolsets'].append('browser')
-    custom['mcp_servers']['bladebro'] = {'enabled': False, 'command': 'old-browser',
+    custom['mcp_servers']['webjitsu'] = {'enabled': False, 'command': 'old-browser',
                                        'env': {'SENTINEL': 'private-prior-value'}}
     write(custom)
     cli('on', label='existing-on')
@@ -174,11 +174,11 @@ with tempfile.TemporaryDirectory(prefix='blade-hermes-probe-') as tmp:
     write(base)
     cli('on', label='conflict-on')
     installed = json.loads(state.read_text())['installed']
-    run([a.hermes, 'config', 'set', 'mcp_servers.bladebro.command', 'user-edited'], 'conflict-edit')
+    run([a.hermes, 'config', 'set', 'mcp_servers.webjitsu.command', 'user-edited'], 'conflict-edit')
     before = cfg.read_bytes()
     cli('off', label='conflict-off', ok=False)
     check(cfg.read_bytes() == before and state.exists(), 'conflicting edits are not overwritten')
-    run([a.hermes, 'config', 'set', 'mcp_servers.bladebro', json.dumps(installed)], 'conflict-resolve')
+    run([a.hermes, 'config', 'set', 'mcp_servers.webjitsu', json.dumps(installed)], 'conflict-resolve')
     cli('off', label='conflict-restored')
 
     for label, invalid in [('malformed', 'agent: [unterminated'),

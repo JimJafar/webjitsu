@@ -57,7 +57,7 @@ fn devtools_discovery_bypasses_environment_proxies() {
     let home = std::env::temp_dir().join(format!("blade-loopback-proxy-{}", std::process::id()));
     std::fs::create_dir_all(&home).unwrap();
 
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_bladebro"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_webjitsu"))
         .args(["probe", "--port", &devtools.to_string()])
         .env("BLADE_HOME", &home)
         .env("BLADE_NO_UPDATE_CHECK", "1")

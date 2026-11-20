@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import threading
 
-BINARY = os.environ.get('BLADEBRO', str(Path(__file__).resolve().parents[2] / 'target/release/bladebro'))
+BINARY = os.environ.get('WEBJITSU', str(Path(__file__).resolve().parents[2] / 'target/release/webjitsu'))
 REQUESTS = []
 CHECKS = 0
 PAYLOAD = b'owned authenticated attachment \xcf\x80\xf0\x9f\xa6\x80\n'

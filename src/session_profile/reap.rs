@@ -8,7 +8,7 @@ use crate::platform;
 
 use super::SessionProfile;
 
-/// Reap the corpses of dead bladebro processes:
+/// Reap the corpses of dead webjitsu processes:
 /// 1. Session profile dirs whose owner pid is dead → stop their
 ///    orphaned browser (found by its SingletonLock pid or, on Linux, by
 ///    an exact `--user-data-dir` match), verify nothing runs on the
@@ -20,7 +20,7 @@ use super::SessionProfile;
 ///    later system or user-service Xvfb on the display is left alone).
 ///
 /// Runs on every Chrome launch. Self-healing: no matter how
-/// bladebro died (SIGKILL, OOM, panic), the next launch
+/// webjitsu died (SIGKILL, OOM, panic), the next launch
 /// cleans up after it.
 pub fn reap_orphans() {
     reap_orphans_at(&platform::blade_dir());
@@ -46,7 +46,7 @@ pub(super) fn restore_interrupted_swap(blade_dir: &Path) -> bool {
     let template = blade_dir.join("profile");
     if old.is_dir() && !template.exists() {
         let _ = std::fs::rename(&old, &template);
-        eprintln!("[bladebro] restored template from .profile.old (sync swap was interrupted)");
+        eprintln!("[webjitsu] restored template from .profile.old (sync swap was interrupted)");
         return true;
     }
     // Normal (template present) or leftover staging: drop it.
@@ -135,10 +135,10 @@ fn reap_session_root(root: &Path, real_root: Option<&Path>) {
         }
         let name = entry.file_name().to_string_lossy().to_string();
         if reap_dead_session(root, &dir, real_root) {
-            eprintln!("[bladebro] reaped dead session profile {name}");
+            eprintln!("[webjitsu] reaped dead session profile {name}");
         } else {
             eprintln!(
-                "[bladebro] dead session profile {name} is still in use by a running process (browser or launcher); left in place (retried on next launch)"
+                "[webjitsu] dead session profile {name} is still in use by a running process (browser or launcher); left in place (retried on next launch)"
             );
         }
     }
@@ -297,7 +297,7 @@ fn restore_interrupted_real_swap(root: &Path) {
             if !template.exists() {
                 let _ = std::fs::rename(&dir, &template);
                 eprintln!(
-                    "[bladebro] restored real-browser template from {name} (interrupted {what})"
+                    "[webjitsu] restored real-browser template from {name} (interrupted {what})"
                 );
             } else {
                 let _ = std::fs::remove_dir_all(&dir);
@@ -356,7 +356,7 @@ fn process_uses_dir(pid: u32, dir: &Path) -> bool {
     }
 }
 
-/// Only a dead Bladebro display claim authorizes cleanup. Orphanhood alone
+/// Only a dead WebJitsu display claim authorizes cleanup. Orphanhood alone
 /// proves no ownership, and neither does the executable: the claim, the exact
 /// Xvfb cmdline and the display number must all agree.
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -405,10 +405,10 @@ fn reap_xvfb_at(tmp: &Path) {
             {
                 platform::kill_process_force(pid);
                 let _ = std::fs::remove_file(&lock);
-                eprintln!("[bladebro] reaped orphaned Xvfb :{n} (pid {pid})");
+                eprintln!("[webjitsu] reaped orphaned Xvfb :{n} (pid {pid})");
             }
             // A live foreign server must keep its lock, even if a stale
-            // Bladebro claim was left before that server started.
+            // WebJitsu claim was left before that server started.
             let _ = std::fs::remove_file(&claim);
             continue;
         }
@@ -417,7 +417,7 @@ fn reap_xvfb_at(tmp: &Path) {
         let _ = std::fs::remove_file(&lock);
         kill_xvfb_on_display(n, &claim);
         let _ = std::fs::remove_file(&claim);
-        eprintln!("[bladebro] reaped stale Xvfb display :{n}");
+        eprintln!("[webjitsu] reaped stale Xvfb display :{n}");
     }
 }
 
@@ -432,7 +432,7 @@ fn reap_xvfb_at(tmp: &Path) {
 /// forever (the unit test failed on the same assumption).
 ///
 /// Conservative by construction: `1` (classic init adoption) or a parent whose
-/// comm is `systemd` (the manager). A live owner is named `bladebro`,
+/// comm is `systemd` (the manager). A live owner is named `webjitsu`,
 /// `chromium` or `Xvfb` — never the manager — and an unreadable parent means
 /// NOT orphaned.
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -481,7 +481,7 @@ fn xvfb_cmdline_matches(cmdline: &str, display: u16) -> bool {
 }
 
 /// Did `pid` start no later than `claim` was written (plus slack)?
-/// Bladebro writes its claim and spawns Xvfb milliseconds later, so its
+/// WebJitsu writes its claim and spawns Xvfb milliseconds later, so its
 /// server is never much younger than its claim. One that started well after
 /// a stale claim was launched by someone else — a system or user service
 /// takes a display the dead claimer had freed. Unreadable data never
@@ -647,7 +647,7 @@ mod xvfb_tests {
         let claim = display
             .root
             .join(format!(".blade-x{}-claim", display.number));
-        // A dead bladebro left its claim an hour ago; this server (a system
+        // A dead webjitsu left its claim an hour ago; this server (a system
         // or user service, adopted by the manager) took the display later.
         std::fs::write(&claim, "2000000000").unwrap();
         std::fs::File::options()

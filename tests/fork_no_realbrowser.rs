@@ -14,13 +14,13 @@ use std::process::{Command, Output, Stdio};
 use serde_json::Value;
 
 fn home(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("bladebro-fork-{tag}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("webjitsu-fork-{tag}-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
 
 fn command(home: &Path) -> Command {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_bladebro"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_webjitsu"));
     cmd.env("BLADE_HOME", home)
         // Upstream's env override for the real lane: it must lose here, so it is
         // set for every case rather than removed.
@@ -33,7 +33,7 @@ fn command(home: &Path) -> Command {
     cmd
 }
 
-fn bladebro(home: &Path, args: &[&str]) -> Output {
+fn webjitsu(home: &Path, args: &[&str]) -> Output {
     command(home).args(args).output().unwrap()
 }
 
@@ -78,21 +78,21 @@ fn real_lane_and_self_update_are_refused() {
         vec!["--rollback"],
         vec!["rollback"],
     ] {
-        let out = bladebro(&h, &args);
+        let out = webjitsu(&h, &args);
         let text = both(&out);
         assert!(
             !out.status.success(),
-            "`bladebro {}` must fail in this build:\n{text}",
+            "`webjitsu {}` must fail in this build:\n{text}",
             args.join(" ")
         );
         assert!(
             text.contains("blocked:"),
-            "`bladebro {}` must refuse with 'blocked:' (the verdict agents branch on):\n{text}",
+            "`webjitsu {}` must refuse with 'blocked:' (the verdict agents branch on):\n{text}",
             args.join(" ")
         );
         assert!(
             text.contains("FORK.md"),
-            "`bladebro {}` must point at the fork's own record of why:\n{text}",
+            "`webjitsu {}` must point at the fork's own record of why:\n{text}",
             args.join(" ")
         );
     }
@@ -115,17 +115,17 @@ fn status_and_off_report_the_disabled_lane() {
                 .into_iter()
                 .chain(extra.iter().copied())
                 .collect();
-            let out = bladebro(&h, &args);
+            let out = webjitsu(&h, &args);
             let text = both(&out);
-            assert!(out.status.success(), "`bladebro rb {sub}`: {text}");
+            assert!(out.status.success(), "`webjitsu rb {sub}`: {text}");
             if extra.is_empty() {
                 assert!(
                     text.contains("removed in this build"),
-                    "`bladebro rb {sub}` must say the lane is gone:\n{text}"
+                    "`webjitsu rb {sub}` must say the lane is gone:\n{text}"
                 );
             } else {
                 let v = json(&out);
-                assert_eq!(v["ok"], true, "`bladebro rb {sub} --json`: {v}");
+                assert_eq!(v["ok"], true, "`webjitsu rb {sub} --json`: {v}");
                 assert_eq!(v["enabled"], false, "the lane must report itself off: {v}");
                 assert_eq!(
                     v["disabled_in_this_build"], true,
@@ -143,7 +143,7 @@ fn status_and_off_report_the_disabled_lane() {
 fn a_stale_enabled_config_cannot_open_the_real_lane() {
     let h = home("stale-config");
     std::fs::write(h.join("realbrowser.json"), br#"{"enabled":true}"#).unwrap();
-    let out = bladebro(&h, &["rb", "status", "--json"]);
+    let out = webjitsu(&h, &["rb", "status", "--json"]);
     let v = json(&out);
     assert_eq!(
         v["enabled"], false,
@@ -155,12 +155,12 @@ fn a_stale_enabled_config_cannot_open_the_real_lane() {
     // test never reads the operator's own data dir.
     let cfg_path = h.join("realbrowser.json");
     assert!(
-        !bladebro::realbrowser::config_from(&cfg_path).enabled,
+        !webjitsu::realbrowser::config_from(&cfg_path).enabled,
         "the loader must not hand back an enabled real lane"
     );
     for env in [Some("real"), Some("agent"), None] {
         assert!(
-            !bladebro::realbrowser::lane_from(env, true),
+            !webjitsu::realbrowser::lane_from(env, true),
             "lane_from({env:?}, enabled=true) must be false in this build"
         );
     }
@@ -176,7 +176,7 @@ fn importing_a_real_profile_refuses_at_the_function() {
     std::fs::write(src.join("Local State"), b"{}").unwrap();
     std::fs::write(src.join("Default/Cookies"), b"not a real cookie DB").unwrap();
 
-    let Err(failure) = bladebro::realbrowser::import_template("chrome", &src) else {
+    let Err(failure) = webjitsu::realbrowser::import_template("chrome", &src) else {
         panic!("importing a user profile must never succeed in this build");
     };
     let err = failure.to_string();
@@ -190,7 +190,7 @@ fn importing_a_real_profile_refuses_at_the_function() {
         "source must be untouched"
     );
     assert!(
-        !bladebro::realbrowser::has_template("chrome"),
+        !webjitsu::realbrowser::has_template("chrome"),
         "a refused import must leave no template behind"
     );
 }
@@ -200,7 +200,7 @@ fn importing_a_real_profile_refuses_at_the_function() {
 #[test]
 fn help_does_not_advertise_removed_surfaces() {
     let h = home("help");
-    let out = bladebro(&h, &["help", "--json"]);
+    let out = webjitsu(&h, &["help", "--json"]);
     let v = json(&out);
     assert!(
         v["commands"]["rb"].is_null(),
@@ -221,7 +221,7 @@ fn help_does_not_advertise_removed_surfaces() {
         ("update", "REMOVED"),
         ("rollback", "REMOVED"),
     ] {
-        let out = bladebro(&h, &["help", cmd]);
+        let out = webjitsu(&h, &["help", cmd]);
         let text = both(&out);
         assert!(
             text.contains(needle),
@@ -235,7 +235,7 @@ fn help_does_not_advertise_removed_surfaces() {
 #[test]
 fn version_identifies_the_fork_and_stays_offline() {
     let h = home("version");
-    let out = bladebro(&h, &["-v"]);
+    let out = webjitsu(&h, &["-v"]);
     let text = both(&out);
     assert!(
         text.contains("no-rb"),

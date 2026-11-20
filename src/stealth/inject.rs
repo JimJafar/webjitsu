@@ -480,7 +480,7 @@ pub async fn apply(cdp: &CdpSession, locale_override: Option<&str>) -> Result<Sc
 
     // Adaptive GL decision, reconciled against the live page on every
     // attach (see `adaptive_gl_spoof`). The launch healthcheck (browser.rs)
-    // probes the real backend when Bladebro launches the browser itself, but
+    // probes the real backend when WebJitsu launches the browser itself, but
     // a GPU process can degrade mid-session (crash → Chrome restarts it with
     // GL disabled → every context is null). Trusting the launch verdict
     // alone served pages a null-GL browser with the spoof inert and no
@@ -581,7 +581,7 @@ pub async fn apply(cdp: &CdpSession, locale_override: Option<&str>) -> Result<Sc
             Some(json!({
                 "source": script,
                 // Also run in the CURRENT document. Without this, a
-                // bladebro attaching to an already-loaded page (the
+                // webjitsu attaching to an already-loaded page (the
                 // --port connect path, or a daemon attach mid-session)
                 // drives an UNPATCHED document until the first navigation.
                 "runImmediately": true,
@@ -662,7 +662,7 @@ mod tests {
             return;
         }
         let path = std::env::temp_dir().join(format!(
-            "bladebro-inject-{scenario}-{}.js",
+            "webjitsu-inject-{scenario}-{}.js",
             std::process::id()
         ));
         std::fs::write(&path, script).expect("write assembled script");

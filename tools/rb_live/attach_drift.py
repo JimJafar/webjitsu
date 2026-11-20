@@ -14,7 +14,7 @@ debug port + scratch BLADE_HOME; no display leak; cleans up its own
 processes. Exit 0 = the contract holds.
 
 Run:  python3 tools/rb_live/attach_drift.py
-      BLADEBRO=/path/to/bladebro python3 tools/rb_live/attach_drift.py
+      WEBJITSU=/path/to/webjitsu python3 tools/rb_live/attach_drift.py
 """
 import http.server
 import json
@@ -32,7 +32,7 @@ REPO = os.path.abspath(os.path.join(ROOT, "..", ".."))
 WORK = os.environ.get("RB_LIVE_DIR", "/tmp/rb_live")
 USERHOME = os.path.join(WORK, "home")
 BLADE_HOME = os.path.join(WORK, "blade")
-BIN = os.environ.get("BLADEBRO", os.path.join(REPO, "target", "release", "bladebro"))
+BIN = os.environ.get("WEBJITSU", os.path.join(REPO, "target", "release", "webjitsu"))
 CHROME = os.environ.get("CHROME_PATH", "/usr/sbin/chromium")
 
 failures = 0

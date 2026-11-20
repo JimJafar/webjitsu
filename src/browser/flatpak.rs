@@ -10,7 +10,7 @@
 //! never /tmp, nor a data dir outside home). Run through the export as-is,
 //! Chrome silently creates the session profile inside the sandbox and it
 //! vanishes on exit — no cookies, localStorage or seasoning ever reach
-//! bladebro's profile dir. Downloads likewise complete into the sandbox's own
+//! webjitsu's profile dir. Downloads likewise complete into the sandbox's own
 //! copy of the downloads dir, and an upload hands the page a file the
 //! sandbox cannot open. The agent lane therefore runs an export via
 //! `flatpak run` itself, sharing the session dir, the downloads dir and a
@@ -162,7 +162,7 @@ pub(super) fn launch_command(chrome_path: &str, user_data_dir: &Path) -> Option<
     });
     let Some(flatpak) = flatpak else {
         eprintln!(
-            "[bladebro] WARNING: {chrome_path} is a Flatpak export but `flatpak` was not found; \
+            "[webjitsu] WARNING: {chrome_path} is a Flatpak export but `flatpak` was not found; \
              launching the export directly — the sandbox cannot see the session profile, so \
              cookies and storage will not persist"
         );
@@ -200,7 +200,7 @@ static UPLOAD_SEQ: AtomicU64 = AtomicU64::new(0);
 
 /// This process's staging dir under `root`, created (0700) before the
 /// launch shares it — Flatpak drops a share whose path does not exist. Dirs
-/// of bladebro processes that are gone (a crash skips teardown) are removed.
+/// of webjitsu processes that are gone (a crash skips teardown) are removed.
 fn prepare_staging(root: &Path, pid: u32) -> PathBuf {
     if let Ok(entries) = std::fs::read_dir(root) {
         for entry in entries.flatten() {
@@ -481,7 +481,7 @@ mod tests {
             .unwrap();
         let data = root.join("blade");
         let uploads = data.join("uploads");
-        // Left by a bladebro that is gone (no pid above i32::MAX is alive),
+        // Left by a webjitsu that is gone (no pid above i32::MAX is alive),
         // by a live process (pid 1), and not ours at all.
         for leftover in ["4294967295/0", "1/0", "notes"] {
             std::fs::create_dir_all(uploads.join(leftover)).unwrap();

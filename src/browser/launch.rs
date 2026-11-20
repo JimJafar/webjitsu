@@ -51,16 +51,16 @@ impl Browser {
                     }
                     if platform::termination_requested() {
                         eprintln!(
-                            "[bladebro] termination signal received — not retrying the launch"
+                            "[webjitsu] termination signal received — not retrying the launch"
                         );
                         break;
                     }
                     if attempt == 0 {
                         eprintln!(
-                            "[bladebro] sandboxed Chrome died at startup (root or restricted container?) — retrying with --no-sandbox"
+                            "[webjitsu] sandboxed Chrome died at startup (root or restricted container?) — retrying with --no-sandbox"
                         );
                     } else if attempt == 1 {
-                        eprintln!("[bladebro] Chrome died at startup (port race?), retrying on a fresh port");
+                        eprintln!("[webjitsu] Chrome died at startup (port race?), retrying on a fresh port");
                     }
                 }
             }
@@ -117,7 +117,7 @@ impl Browser {
                         // The command is over: hand this browser back to be
                         // closed rather than start another for a better stage.
                         eprintln!(
-                            "[bladebro] termination signal received — not relaunching for WebGL"
+                            "[webjitsu] termination signal received — not relaunching for WebGL"
                         );
                         return Ok(browser);
                     }
@@ -125,12 +125,12 @@ impl Browser {
                         let next = stages[i + 1];
                         if next == *stage {
                             eprintln!(
-                                "[bladebro] GL healthcheck: no WebGL context via {} — retrying it once (fresh launch)",
+                                "[webjitsu] GL healthcheck: no WebGL context via {} — retrying it once (fresh launch)",
                                 stage_label(*stage)
                             );
                         } else {
                             eprintln!(
-                                "[bladebro] GL healthcheck: no WebGL context via {} — escalating to {}",
+                                "[webjitsu] GL healthcheck: no WebGL context via {} — escalating to {}",
                                 stage_label(*stage),
                                 stage_label(next)
                             );
@@ -138,9 +138,9 @@ impl Browser {
                         last = Some(browser);
                     } else {
                         eprintln!(
-                            "[bladebro] WARNING: no WebGL context after the full GL ladder — \
+                            "[webjitsu] WARNING: no WebGL context after the full GL ladder — \
                              pages will see `getContext('webgl') === null` (stock Chrome on a \
-                             GL-less host behaves identically; no GL mask is applied). Run `bladebro audit`."
+                             GL-less host behaves identically; no GL mask is applied). Run `webjitsu audit`."
                         );
                         set_gpu_state(Some(GpuState::Missing));
                         return Ok(browser);
@@ -173,7 +173,7 @@ impl Browser {
             }
         };
         if let Some(spec) = &proxy {
-            eprintln!("[bladebro] using proxy: {}", spec.display);
+            eprintln!("[webjitsu] using proxy: {}", spec.display);
         }
         let chrome_path = find_chrome()?;
         let extra = super::compat::agent_extra_flags()?;
@@ -196,7 +196,7 @@ impl Browser {
             // Stealth downgrade: headless=new carries real detection
             // surface. Never fail silently — the operator should know.
             eprintln!(
-                "[bladebro] WARNING: Xvfb unavailable — falling back to headless mode (reduced stealth). Install xvfb for headful-on-virtual-display."
+                "[webjitsu] WARNING: Xvfb unavailable — falling back to headless mode (reduced stealth). Install xvfb for headful-on-virtual-display."
             );
         }
         #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -243,7 +243,7 @@ impl Browser {
         };
         #[cfg(not(any(target_os = "linux", target_os = "android")))]
         let mode_str = "headful";
-        eprintln!("[bladebro] launching Chrome from {chrome_path} on port {port} ({mode_str})");
+        eprintln!("[webjitsu] launching Chrome from {chrome_path} on port {port} ({mode_str})");
 
         let mut cmd = browser_command(&chrome_path, &user_data_dir);
         browser_temp_env(&mut cmd);
@@ -305,7 +305,7 @@ impl Browser {
                         continue;
                     }
                     eprintln!(
-                        "[bladebro] Chrome ready: {} (protocol {})",
+                        "[webjitsu] Chrome ready: {} (protocol {})",
                         v.browser, v.protocol_version
                     );
                     if timing {
@@ -675,9 +675,9 @@ pub async fn launch_lane() -> Result<(Option<Browser>, String)> {
                      DevToolsActivePort file (written for `--remote-debugging-port=0` or \
                      chrome://inspect#remote-debugging on Chrome 144+) and, on Linux, a \
                      running browser's fixed `--remote-debugging-port=<N>` flag. For a fixed \
-                     debug port on macOS/Windows, pass `bladebro nav <url> --port <N>` — a \
+                     debug port on macOS/Windows, pass `webjitsu nav <url> --port <N>` — a \
                      fixed port is also the stealthier arm (`navigator.webdriver=false`). Or \
-                     switch mechanism: `bladebro rb mode clone`.",
+                     switch mechanism: `webjitsu rb mode clone`.",
                     profile.path.display()
                 ))
             })?;
@@ -705,7 +705,7 @@ pub async fn launch_lane() -> Result<(Option<Browser>, String)> {
             if spec.binary.as_os_str().is_empty() {
                 return Err(BladeError::Other(format!(
                     "{} has a profile on this machine but no launchable binary was found — \
-                     install it, pick another browser (`bladebro rb use`), or attach to a \
+                     install it, pick another browser (`webjitsu rb use`), or attach to a \
                      running instance (`rb mode attach`).",
                     spec.name
                 )));
@@ -725,7 +725,7 @@ pub async fn launch_lane() -> Result<(Option<Browser>, String)> {
             if spec.binary.as_os_str().is_empty() {
                 return Err(BladeError::Other(format!(
                     "{} has a profile on this machine but no launchable binary was found — \
-                     install it, pick another browser (`bladebro rb use`), or attach to a \
+                     install it, pick another browser (`webjitsu rb use`), or attach to a \
                      running instance (`rb mode attach`).",
                     spec.name
                 )));
@@ -736,7 +736,7 @@ pub async fn launch_lane() -> Result<(Option<Browser>, String)> {
                 return Err(BladeError::Other(format!(
                     "Google Chrome (136+) refuses remote debugging on the DEFAULT profile dir \
                      (`{}`) — the debug endpoint is never exposed, so profile mode cannot work \
-                     here. Options: (a) `bladebro rb mode clone` (recommended; works and your \
+                     here. Options: (a) `webjitsu rb mode clone` (recommended; works and your \
                      browser may stay open), (b) attach via chrome://inspect#remote-debugging \
                      on Chrome 144+, or (c) relaunch Chrome with a non-default \
                      --user-data-dir.",
@@ -809,7 +809,7 @@ pub(super) fn font_audit() {
                 });
             if !found {
                 eprintln!(
-                    "[bladebro] WARNING: no emoji font found — anti-bot canvas emoji hashes \
+                    "[webjitsu] WARNING: no emoji font found — anti-bot canvas emoji hashes \
                      will mismatch (Kasada/Akamai). Install: noto-fonts-emoji (Arch) / \
                      fonts-noto-color-emoji (Debian)"
                 );

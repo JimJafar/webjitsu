@@ -1,7 +1,7 @@
 //! Daemon lifecycle integration tests (v3.9.10).
 //!
 //! Two regressions guarded here, both found by the install-surface audit:
-//! 1. A second `bladebro daemon` must NOT steal a live daemon's socket —
+//! 1. A second `webjitsu daemon` must NOT steal a live daemon's socket —
 //!    before, it rebound over the active daemon and orphaned it.
 //! 2. A daemon's shutdown must only remove the socket + pidfile while it
 //!    still owns them — before, a stale ("ghost") daemon dying unlinked the
@@ -14,7 +14,7 @@
 //! "Broken pipe" error.
 //!
 //! Plus the busy daemon: a SIGTERM that lands while a request is in flight
-//! must not be lost, and `bladebro stop` must still stop a daemon that is
+//! must not be lost, and `webjitsu stop` must still stop a daemon that is
 //! too busy (or wedged) to answer.
 //!
 //! Subprocess-based with an isolated BLADE_HOME — no Chrome involved (the
@@ -32,17 +32,17 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 fn bin() -> &'static str {
-    env!("CARGO_BIN_EXE_bladebro")
+    env!("CARGO_BIN_EXE_webjitsu")
 }
 
 fn tmp_home(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("bladebro-daemon-{tag}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("webjitsu-daemon-{tag}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }
 
-/// Spawn `bladebro daemon` and wait (bounded) until it bound its socket
+/// Spawn `webjitsu daemon` and wait (bounded) until it bound its socket
 /// AND wrote its pidfile.
 ///
 /// The socket appears before the pidfile write, so tests that inspect or
@@ -302,7 +302,7 @@ fn stop_json_is_one_object_and_lane_restart_emits_no_stray_stdout() {
 
 // ── Client side of the daemon channel ──────────────────────────────────
 
-/// A `bladebro` process (client or daemon) pinned to the agent lane with a
+/// A `webjitsu` process (client or daemon) pinned to the agent lane with a
 /// Chrome binary that does not exist: a tool call that reaches a launch
 /// fails fast, nothing is ever opened, and the real-browser lane (the
 /// user's own browser) is never entered whatever the code under test does.
@@ -317,7 +317,7 @@ fn agent_cmd(home: &Path) -> Command {
     cmd
 }
 
-/// Run `bladebro --json <args>` as a client; returns (exit status, the one
+/// Run `webjitsu --json <args>` as a client; returns (exit status, the one
 /// stdout JSON object, stderr).
 fn client_json(
     home: &Path,
@@ -480,7 +480,7 @@ fn daemon_closing_without_a_reply_reports_an_unknown_outcome() {
 fn cli_request_carries_its_lane_and_explicit_settings() {
     // The daemon's lane and settings came only from ITS environment —
     // inherited from whichever command auto-started it — so
-    // `BLADE_LANE=agent bladebro nav …` against a real-lane daemon ran in
+    // `BLADE_LANE=agent webjitsu nav …` against a real-lane daemon ran in
     // the user's own browser. The request must say what this command asked
     // for.
     let home = tmp_home("carries");
@@ -550,7 +550,7 @@ fn daemon_refuses_a_command_whose_settings_differ() {
     assert_eq!(status.code(), Some(1), "stderr: {stderr}");
     let text = value["text"].as_str().unwrap();
     assert!(
-        text.contains("BLADE_NO_COMPRESS") && text.contains("bladebro stop"),
+        text.contains("BLADE_NO_COMPRESS") && text.contains("webjitsu stop"),
         "the refusal must name the setting and the recovery: {text}"
     );
     assert!(

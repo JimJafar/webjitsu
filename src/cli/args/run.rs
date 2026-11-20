@@ -26,7 +26,7 @@ pub(crate) fn parse_run_args(args: &[String]) -> Result<Value> {
                 "steps" => steps_raw = Some(take_value(args, &mut i, flag)?),
                 _ => {
                     return Err(BladeError::Usage(format!(
-                        "unknown flag --{flag} for run — see 'bladebro help run'"
+                        "unknown flag --{flag} for run — see 'webjitsu help run'"
                     )))
                 }
             }
@@ -43,7 +43,7 @@ pub(crate) fn parse_run_args(args: &[String]) -> Result<Value> {
 
     let raw = steps_raw.ok_or_else(|| {
         BladeError::Usage(
-            "run needs a JSON steps array, e.g. bladebro run '[{\"action\":\"click\",\"ref\":\"e5\"}]' \
+            "run needs a JSON steps array, e.g. webjitsu run '[{\"action\":\"click\",\"ref\":\"e5\"}]' \
              (or @steps.json / - for stdin)"
                 .into(),
         )

@@ -15,27 +15,27 @@ use crate::error::{BladeError, Result};
 /// command map, the output contract, and the workflow that gets the most
 /// out of both.
 const INSTRUCTIONS: &str = "\
-Bladebro CLI — drive a real, stealthy browser from shell commands.
-SETUP: none. The first command auto-starts a background daemon (one Chrome for all later commands). --no-daemon forces isolated one-shot runs; 'bladebro stop' cleans up.
-DISCOVERY: 'bladebro help' (human) — 'bladebro help --json' (this document) — 'bladebro help <command>' for one command in depth.
+WebJitsu CLI — drive a real, stealthy browser from shell commands.
+SETUP: none. The first command auto-starts a background daemon (one Chrome for all later commands). --no-daemon forces isolated one-shot runs; 'webjitsu stop' cleans up.
+DISCOVERY: 'webjitsu help' (human) — 'webjitsu help --json' (this document) — 'webjitsu help <command>' for one command in depth.
 OUTPUT CONTRACT: --json on any command gives ONE JSON object on stdout: {\"ok\":bool,\"is_error\":bool,\"text\":string} (+ \"image_path\" for vision — the PNG is saved to a file, never inlined base64). Exit codes: 0 = success; 1 = the command ran but failed (read 'text' — it carries current page state so you can recover without an extra call); 2 = usage error (bad command/flag/argument — fix the command).
 WORKFLOW: 1) Read-only URL? 'see content <url>' or 'see extract auto <url> --format json --block images,fonts' navigates and reads in ONE call. 2) Interactive flow? 'nav <url>' gives refs + a content preview; act by ref/text/label/selector ('act click \"Sign in\"' needs no see; refs self-heal within a page). 3) On list/search/product/profile pages, 'see extract auto' FIRST: one call returns structured items (site adapters cover Reddit/X/GitHub/HN/products; on Reddit POST pages it returns the full comment tree). 4) Collapse round-trips: 'act fill' for whole forms (supports nth/role per field); 'act batch' for linear sequences; 'run' for if/while branching or --format json step receipts. 5) Big JSON payloads: @file or - (stdin) — no shell-quoting games. 6) Keep budgets default; large outputs offload to artifact files read back via 'see --artifact <path>'.
 RELIABILITY: real Chromium with the full stealth stack and human-like input; per-domain knowledge (settle timing, block config, bot risk) compounds across runs. Errors are loud, never silent: unknown flags and missing values fail with exit 2; navigation errors report exact HTTP status codes (e.g. HTTP 429 + Retry-After); failed actions return current page state for recovery. Vision is the last resort — refs and deltas are cheaper.
 ";
 
-/// The human manual — printed by `bladebro help` / `-h` / bare `bladebro`.
+/// The human manual — printed by `webjitsu help` / `-h` / bare `webjitsu`.
 pub fn help_text() -> String {
     crate::ui::style_help(&HELP_TEXT.replace("__VERSION__", env!("CARGO_PKG_VERSION")))
 }
 
-const HELP_TEXT: &str = r#"bladebro __VERSION__ — agentic browser driver (CLI)
+const HELP_TEXT: &str = r#"webjitsu __VERSION__ — agentic browser driver (CLI)
 
 USAGE
-  bladebro <command> [args] [--json] [--no-daemon]
-  bladebro help [command]      this manual (start here)
+  webjitsu <command> [args] [--json] [--no-daemon]
+  webjitsu help [command]      this manual (start here)
 
 The first command auto-starts a background daemon: ONE Chrome instance for
-all later commands (no startup delay after the first launch). `bladebro stop`
+all later commands (no startup delay after the first launch). `webjitsu stop`
 shuts it down. `--no-daemon` forces isolated one-shot runs.
 
 COMMANDS
@@ -55,7 +55,7 @@ COMMANDS
   mcp                             MCP server on stdio — add to your agent's client config
   rb (removed in this build)      real-browser lane is deleted here: every rb command returns 'blocked:'
   audio [on|off|status]           browser sound output (muted by default; opt-in with 'audio on')
-  hermes on|off|status             switch Hermes' browser to Bladebro; reversible MCP setup
+  hermes on|off|status             switch Hermes' browser to WebJitsu; reversible MCP setup
   audit                           stealth audit — vector suite + boot self-check + drift stamp
   update | -u [--check] [--force]  self-update; --rollback restores the previous binary
   doctor | -doc                   system diagnostics dossier (OS, browser, display, vault, release)
@@ -63,17 +63,17 @@ COMMANDS
   help [command]                  this manual; 'help --json' for the machine version
 
 QUICK START
-  bladebro nav example.com                      navigate
-  bladebro see model                            interactive elements with refs
-  bladebro see content                          page as clean markdown
-  bladebro see extract auto                     structured data (lists, posts, repos, products)
-  bladebro act click e5                         click by ref
-  bladebro act click "Sign in"                  click by text (no see needed)
-  bladebro act type e12 "hello world"           type into one field
-  bladebro act fill '{"e12":"John"}' --submit e20      fill a form in ONE call
-  bladebro act batch '[{"action":"navigate","url":"x.com"},{"action":"see","mode":"content"}]'
-  bladebro run @steps.json                      big payload from a file (- = stdin)
-  bladebro act eval "document.title"            evaluate JS
+  webjitsu nav example.com                      navigate
+  webjitsu see model                            interactive elements with refs
+  webjitsu see content                          page as clean markdown
+  webjitsu see extract auto                     structured data (lists, posts, repos, products)
+  webjitsu act click e5                         click by ref
+  webjitsu act click "Sign in"                  click by text (no see needed)
+  webjitsu act type e12 "hello world"           type into one field
+  webjitsu act fill '{"e12":"John"}' --submit e20      fill a form in ONE call
+  webjitsu act batch '[{"action":"navigate","url":"x.com"},{"action":"see","mode":"content"}]'
+  webjitsu run @steps.json                      big payload from a file (- = stdin)
+  webjitsu act eval "document.title"            evaluate JS
 
 FLAGS
   --json         one JSON object on stdout: {"ok", "is_error", "text"} (+ "image_path" for vision)
@@ -97,7 +97,7 @@ ENVIRONMENT
                        (NO_COLOR also disables; CLICOLOR_FORCE=1 forces color off-TTY)
   CHROME_PATH          override the Chrome/Chromium binary
 
-Agents: `bladebro help --json` returns the machine version of this manual —
+Agents: `webjitsu help --json` returns the machine version of this manual —
 tool schemas (same as MCP tools/list), per-command usage, exit codes, payload
 conventions, and examples. Fetch it once, then drive the CLI with --json.
 "#;
@@ -170,15 +170,15 @@ fn command_help_json(cmd: &str) -> Option<Value> {
     let cmd = normalize_cmd(cmd);
     let v = match cmd {
         "nav" => json!({
-            "usage": "bladebro nav <url> [--block <classes>]",
+            "usage": "webjitsu nav <url> [--block <classes>]",
             "tool": "act",
             "args": { "url": "target URL; bare domains get https://" },
             "flags": { "--block": "images,fonts,media,trackers (remembered per domain)" },
-            "examples": ["bladebro nav example.com", "bladebro nav https://x.com --block images,fonts --json"],
+            "examples": ["webjitsu nav example.com", "webjitsu nav https://x.com --block images,fonts --json"],
             "notes": ["returns refs + a content preview — often enough to act without a separate see"]
         }),
         "see" => json!({
-            "usage": "bladebro see [mode] [url] [extract <type>] [flags]",
+            "usage": "webjitsu see [mode] [url] [extract <type>] [flags]",
             "tool": "see",
             "args": {
                 "mode": "model (default) | content | outline",
@@ -203,17 +203,17 @@ fn command_help_json(cmd: &str) -> Option<Value> {
                 "--format": "text (default) | json — pure JSON output for extract, artifact, changes, find, and logs reads"
             },
             "examples": [
-                "bladebro see model",
-                "bladebro see content example.com",
-                "bladebro see extract auto --limit 20",
-                "bladebro see extract auto --format json",
-                "bladebro see --find \"Submit\"",
-                "bladebro see --logs network"
+                "webjitsu see model",
+                "webjitsu see content example.com",
+                "webjitsu see extract auto --limit 20",
+                "webjitsu see extract auto --format json",
+                "webjitsu see --find \"Submit\"",
+                "webjitsu see --logs network"
             ],
             "notes": ["extract=auto is the first move on list/search/product/profile pages — one call returns structured items; on Reddit post pages it attempts the full comment tree; complete/partial disclose API denial and missing replies", "extract=auto envelope: container,count,items + page_total/partial/paged when the page claims more results than the DOM holds, sponsored (paid placements), duplicates_removed, redirects_unwrapped/redirects_unresolved — each explained by a note line"]
         }),
         "act" => json!({
-            "usage": "bladebro act <action> [target] [value] [--flags]",
+            "usage": "webjitsu act <action> [target] [value] [--flags]",
             "tool": "act",
             "actions": crate::action::ACT_ACTIONS,
             "universal_flags": {
@@ -240,17 +240,17 @@ fn command_help_json(cmd: &str) -> Option<Value> {
                 "--format": "read/extract/eval: text (default) | json — read returns live values/state/select choices; {data,note} for notices; {artifact,bytes,next_offset:0} when oversized"
             },
             "examples": [
-                "bladebro act click e5",
-                "bladebro act click \"Sign in\"",
-                "bladebro act type e12 \"hello\"",
-                "bladebro act fill '{\"e3\":\"John\"}' --submit e8",
-                "bladebro act click Submit --url example.com/login",
-                "bladebro act upload e5 /tmp/file.pdf",
-                "bladebro act batch @steps.json",
-                "bladebro act extract --format json",
-                "bladebro act wait settle",
-                "bladebro act dialog confirm --accept false",
-                "bladebro act eval \"document.title\""
+                "webjitsu act click e5",
+                "webjitsu act click \"Sign in\"",
+                "webjitsu act type e12 \"hello\"",
+                "webjitsu act fill '{\"e3\":\"John\"}' --submit e8",
+                "webjitsu act click Submit --url example.com/login",
+                "webjitsu act upload e5 /tmp/file.pdf",
+                "webjitsu act batch @steps.json",
+                "webjitsu act extract --format json",
+                "webjitsu act wait settle",
+                "webjitsu act dialog confirm --accept false",
+                "webjitsu act eval \"document.title\""
             ],
             "notes": [
                 "unquoted multi-word values join: act click Sign in == act click \"Sign in\"",
@@ -260,7 +260,7 @@ fn command_help_json(cmd: &str) -> Option<Value> {
             ]
         }),
         "state" => json!({
-            "usage": "bladebro state <op> [args] [flags]",
+            "usage": "webjitsu state <op> [args] [flags]",
             "tool": "state",
             "ops": ["cookies","set-cookie","del-cookie","ls","ss","set-ls","set-ss","rm-ls","rm-ss","clear-ls","clear-ss","tabs","open-tab","close-tab","switch-tab","save","load","compress","block"],
             "flags": {
@@ -276,64 +276,64 @@ fn command_help_json(cmd: &str) -> Option<Value> {
                 "--mode": "compress: on | off | status"
             },
             "examples": [
-                "bladebro state cookies",
-                "bladebro state cookies example.com",
-                "bladebro state set-cookie token abc --domain example.com",
-                "bladebro state tabs",
-                "bladebro state save my-session",
-                "bladebro state block images,fonts",
-                "bladebro state compress off"
+                "webjitsu state cookies",
+                "webjitsu state cookies example.com",
+                "webjitsu state set-cookie token abc --domain example.com",
+                "webjitsu state tabs",
+                "webjitsu state save my-session",
+                "webjitsu state block images,fonts",
+                "webjitsu state compress off"
             ],
             "notes": ["save/load persists cookies+storage; navigate to the saved origin before load, then reload"]
         }),
         "run" => json!({
-            "usage": "bladebro run '<json-steps>' | @file | -",
+            "usage": "webjitsu run '<json-steps>' | @file | -",
             "tool": "run",
             "steps": "array; each {action:...} uses the same fields as act; plus {action:'if'|'while'|'see'}",
             "examples": [
-                "bladebro run '[{\"action\":\"navigate\",\"url\":\"example.com\"},{\"action\":\"see\",\"mode\":\"content\"}]'",
-                "bladebro run @steps.json",
-                "cat steps.json | bladebro run -"
+                "webjitsu run '[{\"action\":\"navigate\",\"url\":\"example.com\"},{\"action\":\"see\",\"mode\":\"content\"}]'",
+                "webjitsu run @steps.json",
+                "cat steps.json | webjitsu run -"
             ],
             "notes": ["stops on first error with the step number + page state", "while+see reads across pages in ONE call", "--format json: status, results per top-level step, stopped_at/error/page/note on failure; nested observations remain output text; step formats are explicit; large results offload"]
         }),
         "vision" => json!({
-            "usage": "bladebro vision [--marks]",
+            "usage": "webjitsu vision [--marks]",
             "tool": "vision",
             "flags": { "--marks": "numbered ref badges (Set-of-Marks)" },
-            "examples": ["bladebro vision", "bladebro vision --marks --json | jq -r .image_path"],
+            "examples": ["webjitsu vision", "webjitsu vision --marks --json | jq -r .image_path"],
             "notes": ["screenshot is saved to a file; path printed (json: image_path)", "last resort — see/act are cheaper and return actionable refs"]
         }),
         "daemon" => json!({
-            "usage": "bladebro daemon",
+            "usage": "webjitsu daemon",
             "tool": null,
             "examples": [],
             "notes": ["auto-starts on the first command; run manually only to watch startup errors"]
         }),
         "stop" => json!({
-            "usage": "bladebro stop",
+            "usage": "webjitsu stop",
             "tool": null,
             "examples": [],
             "notes": ["graceful (flushes logins + knowledge); idempotent — exit 0 when nothing is running"]
         }),
         "help" => json!({
-            "usage": "bladebro help [command] [--json]",
+            "usage": "webjitsu help [command] [--json]",
             "tool": null,
-            "examples": ["bladebro help --json", "bladebro help act"],
+            "examples": ["webjitsu help --json", "webjitsu help act"],
             "notes": ["the single self-teaching surface — fetch 'help --json' once"]
         }),
         "audio" => json!({
-            "usage": "bladebro audio [on|off|status] [--json]",
+            "usage": "webjitsu audio [on|off|status] [--json]",
             "tool": null,
             "examples": [
-                "bladebro audio",
-                "bladebro audio on",
-                "bladebro audio off",
-                "bladebro audio status --json"
+                "webjitsu audio",
+                "webjitsu audio on",
+                "webjitsu audio off",
+                "webjitsu audio status --json"
             ],
             "notes": [
                 "browser audio is muted by default (`--mute-audio`) on both the isolated agent browser and owned real-browser launches so media/video pages never play unexpected sound",
-                "opt in to audible playback with `bladebro audio on` (persisted) or `BLADE_AUDIO=1` (per-process override); `bladebro audio off` restores silent mode",
+                "opt in to audible playback with `webjitsu audio on` (persisted) or `BLADE_AUDIO=1` (per-process override); `webjitsu audio off` restores silent mode",
                 "does not alter externally attached browsers (`rb mode attach` / `--port`), and does not affect Blink media APIs or WebAudio fingerprinting"
             ]
         }),
@@ -341,11 +341,11 @@ fn command_help_json(cmd: &str) -> Option<Value> {
         // `help rb` explains the refusal instead of looking like a typo, and
         // `rb status` answers with `disabled_in_this_build: true`.
         "rb" | "realbrowser" => json!({
-            "usage": "bladebro rb status (reports disabled) — every other rb subcommand returns 'blocked:'",
+            "usage": "webjitsu rb status (reports disabled) — every other rb subcommand returns 'blocked:'",
             "tool": null,
             "removed_in_this_build": true,
             "examples": [
-                "bladebro rb status --json"
+                "webjitsu rb status --json"
             ],
             "notes": [
                 "REMOVED IN THIS FORK: the real-browser lane (drive your own browser, enumerate its profiles, clone its cookies/logins, or attach to a running one) does not exist in this build — see FORK.md",
@@ -354,32 +354,32 @@ fn command_help_json(cmd: &str) -> Option<Value> {
             ]
         }),
         "hermes" => json!({
-            "usage": "bladebro hermes on|off|status [--profile <name>] [--hermes <path>] [--json]",
+            "usage": "webjitsu hermes on|off|status [--profile <name>] [--hermes <path>] [--json]",
             "tool": null,
-            "examples": ["bladebro hermes on", "bladebro hermes off", "bladebro hermes status --json", "bladebro hermes on --profile work"],
-            "notes": ["Uses Hermes' public configuration CLI and the ordinary Bladebro MCP server; no plugin or schema copies. Preserves other disabled toolsets and web search/extraction. off restores the prior MCP entry and browser policy, retaining unrelated settings. Start a new chat and restart gateways/desktop clients after switching. HERMES_HOME or --profile selects the Hermes profile. Chrome/Chromium is required; doctor checks prerequisites."]
+            "examples": ["webjitsu hermes on", "webjitsu hermes off", "webjitsu hermes status --json", "webjitsu hermes on --profile work"],
+            "notes": ["Uses Hermes' public configuration CLI and the ordinary WebJitsu MCP server; no plugin or schema copies. Preserves other disabled toolsets and web search/extraction. off restores the prior MCP entry and browser policy, retaining unrelated settings. Start a new chat and restart gateways/desktop clients after switching. HERMES_HOME or --profile selects the Hermes profile. Chrome/Chromium is required; doctor checks prerequisites."]
         }),
         "mcp" => json!({
-            "usage": "bladebro mcp",
+            "usage": "webjitsu mcp",
             "tool": null,
-            "examples": ["bladebro mcp"],
+            "examples": ["webjitsu mcp"],
             "notes": [
                 "MCP server on stdio — the integration surface for AI agents (Claude, Cursor, opencode, pi)",
-                "client config: {\"command\":\"bladebro\",\"args\":[\"mcp\"]}",
+                "client config: {\"command\":\"webjitsu\",\"args\":[\"mcp\"]}",
                 "drives Chrome over WebSocket by default (navigator.webdriver stays false natively — zero page patches); BLADE_TRANSPORT=pipe opts into the zero-port pipe transport instead"
             ]
         }),
         "audit" => json!({
-            "usage": "bladebro audit",
+            "usage": "webjitsu audit",
             "tool": null,
-            "examples": ["bladebro audit"],
+            "examples": ["webjitsu audit"],
             "notes": ["stealth audit — local vector suite + boot self-check + cross-restart consistency stamp; every check must pass (the run prints its own total); any FAIL exits non-zero"]
         }),
         // FORK (`fork::SELF_UPDATE_DISABLED`, see FORK.md): self-update would
         // install upstream's unpatched binary and undo this fork, so the help
         // says so instead of advertising a working command.
         "update" => json!({
-            "usage": "bladebro update — REMOVED in this build (update by rebuilding from source)",
+            "usage": "webjitsu update — REMOVED in this build (update by rebuilding from source)",
             "tool": null,
             "removed_in_this_build": true,
             "examples": [],
@@ -389,23 +389,23 @@ fn command_help_json(cmd: &str) -> Option<Value> {
             ]
         }),
         "doctor" => json!({
-            "usage": "bladebro doctor | -doc",
+            "usage": "webjitsu doctor | -doc",
             "tool": null,
-            "examples": ["bladebro doctor"],
+            "examples": ["webjitsu doctor"],
             "notes": ["13 system checks: data root, Chrome, Xvfb, profile, logins, hygiene, locks, network, binary, disk, version"]
         }),
         "rollback" => json!({
             // FORK: refused — see the `update` arm above and FORK.md.
-            "usage": "bladebro --rollback — REMOVED in this build (a backup restore would put an unpatched binary back)",
+            "usage": "webjitsu --rollback — REMOVED in this build (a backup restore would put an unpatched binary back)",
             "tool": null,
             "removed_in_this_build": true,
-            "examples": ["bladebro --rollback"],
+            "examples": ["webjitsu --rollback"],
             "notes": ["restores the previous binary from <data dir>/backups (written by every self-update)"]
         }),
         "version" => json!({
-            "usage": "bladebro -v | --version",
+            "usage": "webjitsu -v | --version",
             "tool": null,
-            "examples": ["bladebro -v"],
+            "examples": ["webjitsu -v"],
             "notes": ["version + install method + update status (behind / on latest / ahead — never a false 'up to date')"]
         }),
         _ => return None,
@@ -426,7 +426,7 @@ fn command_tool(cmd: &str) -> Option<&'static str> {
     }
 }
 
-/// The machine manual — `bladebro help --json` (optionally per command).
+/// The machine manual — `webjitsu help --json` (optionally per command).
 /// One call teaches an agent everything the CLI can do: the same depth as
 /// MCP's tools + instructions, plus CLI-only details (exit codes, stdin/@file
 /// payloads, universal flags, examples).
@@ -437,7 +437,7 @@ pub fn help_json(cmd: Option<&str>) -> Result<String> {
         let norm = if name == "navigate" { "nav" } else { name };
         let detail = command_help_json(norm).ok_or_else(|| {
             BladeError::Usage(format!(
-                "unknown command '{name}' — run 'bladebro help' for the command list"
+                "unknown command '{name}' — run 'webjitsu help' for the command list"
             ))
         })?;
         let mut out = json!({ "command": norm, "detail": detail });
@@ -466,15 +466,15 @@ pub fn help_json(cmd: Option<&str>) -> Result<String> {
     }
 
     let out = json!({
-        "bladebro": { "version": env!("CARGO_PKG_VERSION"), "surface": "cli" },
+        "webjitsu": { "version": env!("CARGO_PKG_VERSION"), "surface": "cli" },
         "instructions": INSTRUCTIONS,
         "quick_start": [
-            "bladebro nav example.com",
-            "bladebro see extract auto",
-            "bladebro act click \"Sign in\"",
-            "bladebro act fill '{\"e12\":\"John\"}' --submit e20",
-            "bladebro run '[{\"action\":\"navigate\",\"url\":\"x.com\"},{\"action\":\"see\",\"mode\":\"content\"}]'",
-            "bladebro stop"
+            "webjitsu nav example.com",
+            "webjitsu see extract auto",
+            "webjitsu act click \"Sign in\"",
+            "webjitsu act fill '{\"e12\":\"John\"}' --submit e20",
+            "webjitsu run '[{\"action\":\"navigate\",\"url\":\"x.com\"},{\"action\":\"see\",\"mode\":\"content\"}]'",
+            "webjitsu stop"
         ],
         "commands": commands,
         "tools": tools,
@@ -484,7 +484,7 @@ pub fn help_json(cmd: Option<&str>) -> Result<String> {
             "payloads": {
                 "@file": "read the argument from a file (steps, fields, templates, js)",
                 "-": "read from stdin",
-                "example": "bladebro run @steps.json  |  cat steps.json | bladebro run -"
+                "example": "webjitsu run @steps.json  |  cat steps.json | webjitsu run -"
             }
         },
         "exit_codes": {
@@ -502,7 +502,7 @@ pub fn help_json(cmd: Option<&str>) -> Result<String> {
             "BLADE_PLAIN": "plain CLI output — no ANSI even on a TTY (NO_COLOR also honored; CLICOLOR_FORCE=1 forces color off-TTY)",
             "BLADE_TRANSPORT": "mcp transport: WebSocket by default (native webdriver=false); set 'pipe' for the zero-port transport (its automation flag is masked)",
             "CHROME_PATH": "override the Chrome/Chromium binary",
-            "RUST_LOG": "log filter (default warn,bladebro=info)"
+            "RUST_LOG": "log filter (default warn,webjitsu=info)"
         }
     });
     Ok(format!("{out}"))
@@ -513,30 +513,30 @@ pub fn command_help_text(cmd: &str) -> Option<String> {
     let cmd = normalize_cmd(cmd);
     let text = match cmd {
         "nav" => {
-            r#"bladebro nav — navigate
+            r#"webjitsu nav — navigate
 
 USAGE
-  bladebro nav <url> [--block <classes>] [--json]
+  webjitsu nav <url> [--block <classes>] [--json]
 
 Returns the page title/URL, interactive element refs, and a content preview —
 usually enough to act without a separate see call. Bare domains work:
-`bladebro nav example.com` → https://example.com. The first command
+`webjitsu nav example.com` → https://example.com. The first command
 auto-starts the daemon (one Chrome shared by all later commands).
 
 --block <classes>   block inert resources for this load AND remember the
                     choice for the domain: images,fonts,media,trackers
 
 EXAMPLES
-  bladebro nav example.com
-  bladebro nav https://x.com --block images,fonts
-  bladebro nav example.com --json | jq .text
+  webjitsu nav example.com
+  webjitsu nav https://x.com --block images,fonts
+  webjitsu nav example.com --json | jq .text
 "#
         }
         "see" => {
-            r#"bladebro see — read the page without acting
+            r#"webjitsu see — read the page without acting
 
 USAGE
-  bladebro see [mode] [url] [extract <type>] [flags]
+  webjitsu see [mode] [url] [extract <type>] [flags]
 
 MODES
   model (default)   interactive elements with refs (e1, e2, …)
@@ -574,20 +574,20 @@ FLAGS
   --url <url>         navigate first (or pass the URL positionally)
 
 EXAMPLES
-  bladebro see                            interactive elements
-  bladebro see content                    page as markdown
-  bladebro see extract auto --limit 20    structured items
-  bladebro see extract auto --format json  pure JSON output
-  bladebro see example.com content        navigate + read in one call
-  bladebro see --find "Submit"            refs by text
-  bladebro see --logs network             recent requests
+  webjitsu see                            interactive elements
+  webjitsu see content                    page as markdown
+  webjitsu see extract auto --limit 20    structured items
+  webjitsu see extract auto --format json  pure JSON output
+  webjitsu see example.com content        navigate + read in one call
+  webjitsu see --find "Submit"            refs by text
+  webjitsu see --logs network             recent requests
 "#
         }
         "act" => {
-            r#"bladebro act — interact with the page
+            r#"webjitsu act — interact with the page
 
 USAGE
-  bladebro act <action> [target] [value] [--flags]
+  webjitsu act <action> [target] [value] [--flags]
 
 ACTIONS
   click <ref|label>        type <target> <text>      fill <fields> [--submit]
@@ -630,26 +630,26 @@ RESULT SHAPES (stable — parse them without guessing)
                 `note:` line explaining what to do about it.
 
 EXAMPLES
-  bladebro act click e5                          click a ref
-  bladebro act click "Sign in"                   click by text
-  bladebro act click --selector "[role=menuitem]"   click by CSS (searches shadow DOM)
-  bladebro act type e12 "hello world"            type
-  bladebro act fill '{"e3":"John","e5":"Doe"}' --submit e8
-  bladebro act click Submit --url example.com/login   navigate + click in ONE call
-  bladebro act upload e5 /tmp/file.pdf           file upload
-  bladebro act wait settle                       wait for DOM quiet
-  bladebro act wait element --text "Results"     wait for an element
-  bladebro act eval "document.title"             evaluate JS
-  bladebro act batch '[{"action":"reload"}]'     sequential steps in ONE call
-  bladebro act collect https://x.com/list --max 100   infinite-scroll collect
-  bladebro act extract --format json             structured data as JSON
+  webjitsu act click e5                          click a ref
+  webjitsu act click "Sign in"                   click by text
+  webjitsu act click --selector "[role=menuitem]"   click by CSS (searches shadow DOM)
+  webjitsu act type e12 "hello world"            type
+  webjitsu act fill '{"e3":"John","e5":"Doe"}' --submit e8
+  webjitsu act click Submit --url example.com/login   navigate + click in ONE call
+  webjitsu act upload e5 /tmp/file.pdf           file upload
+  webjitsu act wait settle                       wait for DOM quiet
+  webjitsu act wait element --text "Results"     wait for an element
+  webjitsu act eval "document.title"             evaluate JS
+  webjitsu act batch '[{"action":"reload"}]'     sequential steps in ONE call
+  webjitsu act collect https://x.com/list --max 100   infinite-scroll collect
+  webjitsu act extract --format json             structured data as JSON
 "#
         }
         "state" => {
-            r#"bladebro state — cookies, storage, tabs, sessions, blocking
+            r#"webjitsu state — cookies, storage, tabs, sessions, blocking
 
 USAGE
-  bladebro state <op> [args] [flags]
+  webjitsu state <op> [args] [flags]
 
 COOKIES
   cookies [url]                        list (filtered to url / current page)
@@ -673,17 +673,17 @@ SESSIONS / CONTROL
   compress on|off|status               context pruning
 
 EXAMPLES
-  bladebro state cookies
-  bladebro state set-cookie token abc --domain example.com --secure
-  bladebro state tabs
-  bladebro state save my-session
+  webjitsu state cookies
+  webjitsu state set-cookie token abc --domain example.com --secure
+  webjitsu state tabs
+  webjitsu state save my-session
 "#
         }
         "run" => {
-            r#"bladebro run — batch actions with branching and loops
+            r#"webjitsu run — batch actions with branching and loops
 
 USAGE
-  bladebro run '<json-steps>' [--slim] [--format text|json] (or @file / -)
+  webjitsu run '<json-steps>' [--slim] [--format text|json] (or @file / -)
 
 Steps are action objects (same fields as act) plus:
   {"action":"if","condition":…,"then":[…],"else":[…]}   branch
@@ -699,16 +699,16 @@ stopped_at/error/page/note. Nested observations stay in output; set each read's
 format explicitly. Oversized results use the usual artifact paging envelope.
 
 EXAMPLES
-  bladebro run '[{"action":"navigate","url":"example.com"},{"action":"see","mode":"content"}]'
-  bladebro run @steps.json
-  cat steps.json | bladebro run -
+  webjitsu run '[{"action":"navigate","url":"example.com"},{"action":"see","mode":"content"}]'
+  webjitsu run @steps.json
+  cat steps.json | webjitsu run -
 "#
         }
         "vision" => {
-            r#"bladebro vision — screenshot
+            r#"webjitsu vision — screenshot
 
 USAGE
-  bladebro vision [--marks]
+  webjitsu vision [--marks]
 
 Always saves a PNG to a file and prints the path (--json: "image_path").
 --marks overlays numbered ref badges (Set-of-Marks) so you can click by ref
@@ -716,15 +716,15 @@ after looking at the image. Vision is the LAST RESORT: the structural model
 (see/act with refs) is cheaper and gives actionable refs.
 
 EXAMPLES
-  bladebro vision
-  bladebro vision --marks --json | jq -r .image_path
+  webjitsu vision
+  webjitsu vision --marks --json | jq -r .image_path
 "#
         }
         "daemon" => {
-            r#"bladebro daemon — persistent Chrome session
+            r#"webjitsu daemon — persistent Chrome session
 
 USAGE
-  bladebro daemon
+  webjitsu daemon
 
 Auto-starts on the first command — run it manually only to watch startup
 errors. One Chrome instance serves every later command (Unix socket under the
@@ -733,32 +733,32 @@ seconds (default 600), then Chrome shuts down; the next command relaunches it.
 "#
         }
         "audio" => {
-            r#"bladebro audio — browser sound output (muted by default)
+            r#"webjitsu audio — browser sound output (muted by default)
 
 USAGE
-  bladebro audio                  show current audio state (same as `audio status`)
-  bladebro audio on               opt in to audible browser playback
-  bladebro audio off              mute browser audio again (default)
-  bladebro audio status [--json]  show effective audio state + env override
+  webjitsu audio                  show current audio state (same as `audio status`)
+  webjitsu audio on               opt in to audible browser playback
+  webjitsu audio off              mute browser audio again (default)
+  webjitsu audio status [--json]  show effective audio state + env override
 
 Browser sound is muted by default (`--mute-audio`) on both the isolated agent
 browser and owned real-browser launches so YouTube, video ads, and media
 players never play unexpected sound while an agent browses.
 
-Opt in persistently with `bladebro audio on`, or for one run with
+Opt in persistently with `webjitsu audio on`, or for one run with
 `BLADE_AUDIO=1` (`BLADE_AUDIO=0` forces muted). The CLI daemon restarts
 immediately and running MCP sessions pick up the change on their next call.
 Externally attached browsers (`rb mode attach` / `--port`) are untouched.
 "#
         }
         "rb" | "realbrowser" => {
-            r#"bladebro rb — REMOVED in this build
+            r#"webjitsu rb — REMOVED in this build
 
 USAGE
-  bladebro rb status              reports the disabled state (exit 0)
-  bladebro rb <anything else>     blocked: (exit non-zero)
+  webjitsu rb status              reports the disabled state (exit 0)
+  webjitsu rb <anything else>     blocked: (exit non-zero)
 
-This fork of Bladebro deletes the real-browser lane: the agent never
+This fork of WebJitsu deletes the real-browser lane: the agent never
 drives your own browser, never enumerates your Chromium profiles, and
 never copies the cookies, logins and storage out of one. The isolated
 agent browser under the blade data dir is the only lane, so there is
@@ -768,17 +768,17 @@ WHY
   A real profile is the union of every session you are logged into.
   Handing it to an agent that reads untrusted pages puts page content in
   a position to act as you, and a copied profile sits on disk as plain
-  session tokens. `bladebro state save|load` still persists the agent
+  session tokens. `webjitsu state save|load` still persists the agent
   browser's own state, which is all an agent needs.
 
   FORK.md records the gates and how to re-enable a removed feature.
 "#
         }
         "stop" => {
-            r#"bladebro stop — shut the daemon down
+            r#"webjitsu stop — shut the daemon down
 
 USAGE
-  bladebro stop
+  webjitsu stop
 
 Graceful: flushes logins + domain knowledge, kills Chrome, removes the
 socket. Idempotent — exit 0 even when nothing is running. The daemon runs
@@ -789,49 +789,49 @@ gracefully; SIGKILL follows if it is still alive 10s later.
 "#
         }
         "help" => {
-            r#"bladebro help — the single self-teaching surface
+            r#"webjitsu help — the single self-teaching surface
 
 USAGE
-  bladebro help              this manual
-  bladebro help <command>    one command in depth
-  bladebro help --json       the machine manual: tool schemas (same as MCP
+  webjitsu help              this manual
+  webjitsu help <command>    one command in depth
+  webjitsu help --json       the machine manual: tool schemas (same as MCP
                              tools/list), per-command usage, exit codes,
                              payload conventions, examples — call ONCE and
                              you know the whole CLI
-  bladebro help <cmd> --json per-command machine help
-  bladebro <cmd> --help      same as help <cmd> (never runs the command)
+  webjitsu help <cmd> --json per-command machine help
+  webjitsu <cmd> --help      same as help <cmd> (never runs the command)
 "#
         }
         "hermes" => {
-            r#"bladebro hermes — reversible Hermes browser setup
+            r#"webjitsu hermes — reversible Hermes browser setup
 
 USAGE
-  bladebro hermes on             connect MCP, then disable Hermes' built-in browser tools
-  bladebro hermes off            restore the previous browser policy and MCP entry
-  bladebro hermes status         inspect the managed setup
+  webjitsu hermes on             connect MCP, then disable Hermes' built-in browser tools
+  webjitsu hermes off            restore the previous browser policy and MCP entry
+  webjitsu hermes status         inspect the managed setup
   --profile <name>               select a Hermes profile (forwarded as hermes -p)
   --hermes <path>                select the Hermes CLI executable
   --json                        one machine-readable result
 
 Uses the ordinary MCP server and Hermes' public configuration commands.
 Web search/extraction and unrelated settings are preserved. Configuration
-recovery is stored privately beside Hermes' config.yaml in .bladebro-browser/.
+recovery is stored privately beside Hermes' config.yaml in .webjitsu-browser/.
 An interrupted switch can resume with on or restore with off. Changed MCP
 entries are never overwritten during recovery. Use the same profile for off.
 Start a new chat; restart running gateways/desktop clients after switching.
-Chrome/Chromium must be installed; bladebro doctor checks prerequisites.
-Updates use your normal Bladebro updater; no separate Hermes plugin to update.
+Chrome/Chromium must be installed; webjitsu doctor checks prerequisites.
+Updates use your normal WebJitsu updater; no separate Hermes plugin to update.
 "#
         }
         "mcp" => {
-            r#"bladebro mcp — MCP server (stdio JSON-RPC)
+            r#"webjitsu mcp — MCP server (stdio JSON-RPC)
 
 USAGE
-  bladebro mcp
+  webjitsu mcp
 
 The integration surface for AI agents. Client config:
 
-  {"mcpServers": {"bladebro": {"command": "bladebro", "args": ["mcp"]}}}
+  {"mcpServers": {"webjitsu": {"command": "webjitsu", "args": ["mcp"]}}}
 
 Speaks MCP 2024-11-05 through 2026-07-28 (legacy initialize handshake +
 the 2026-07-28 stateless dialect). Drives Chrome over WebSocket by default
@@ -842,10 +842,10 @@ Chrome launches lazily on the first tool call.
 "#
         }
         "audit" => {
-            r#"bladebro audit — stealth audit
+            r#"webjitsu audit — stealth audit
 
 USAGE
-  bladebro audit
+  webjitsu audit
 
 Runs the local vector suite (tests/vectors.html: the core stealth
 surface, the permissions native-parity battery, GL-coherence checks,
@@ -858,10 +858,10 @@ tests/vectors.html in the current directory overrides it.
 "#
         }
         "update" => {
-            r#"bladebro -u / update — REMOVED in this build
+            r#"webjitsu -u / update — REMOVED in this build
 
 USAGE
-  bladebro -u                     blocked: (exit non-zero)
+  webjitsu -u                     blocked: (exit non-zero)
 
 Self-update is refused here. Downloading upstream's release and swapping
 it in would replace this build with one that has the real-browser lane
@@ -876,10 +876,10 @@ FORK.md records every gate and how to re-enable a removed feature.
 "#
         }
         "doctor" => {
-            r#"bladebro doctor / -doc — system diagnostics
+            r#"webjitsu doctor / -doc — system diagnostics
 
 USAGE
-  bladebro doctor
+  webjitsu doctor
 
 13 checks: data directory, Chrome (+version), Xvfb, profile dir, login
 persistence, profile hygiene, stale locks, GitHub reachability, binary
@@ -887,10 +887,10 @@ integrity, disk space, version-vs-latest. Failures print a fix.
 "#
         }
         "rollback" => {
-            r#"bladebro --rollback — REMOVED in this build
+            r#"webjitsu --rollback — REMOVED in this build
 
 USAGE
-  bladebro --rollback             blocked: (exit non-zero)
+  webjitsu --rollback             blocked: (exit non-zero)
 
 Restoring a backup would put an older — and possibly unpatched — binary
 back in place, so it is refused with the same gate as `update`. To go
@@ -898,10 +898,10 @@ back: check out the tag you want in this fork's repository and rebuild.
 "#
         }
         "version" => {
-            r#"bladebro -v / --version — version + update status
+            r#"webjitsu -v / --version — version + update status
 
 USAGE
-  bladebro -v
+  webjitsu -v
 
 Version + build id, install method (npm / source / binary) and update
 state: behind (with the hint), on the latest release, or ahead of it

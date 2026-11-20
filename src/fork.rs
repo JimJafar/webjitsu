@@ -13,17 +13,17 @@
 
 use crate::error::BladeError;
 
-/// The real-browser lane is removed in this build: `bladebro rb` refuses,
+/// The real-browser lane is removed in this build: `webjitsu rb` refuses,
 /// the lane can never be selected (config or `BLADE_LANE=real`), and copying
 /// a user profile cannot happen.
 pub const REAL_BROWSER_DISABLED: bool = true;
 
 /// Self-update and rollback are removed in this build. Without this gate
-/// `bladebro update` would download upstream's unpatched binary and swap it
+/// `webjitsu update` would download upstream's unpatched binary and swap it
 /// in, silently restoring the real-browser lane this fork exists to remove.
 pub const SELF_UPDATE_DISABLED: bool = true;
 
-/// Suffix identifying this build, so `bladebro -v` and any bug report show a
+/// Suffix identifying this build, so `webjitsu -v` and any bug report show a
 /// patched binary rather than an upstream one.
 pub const FORK_TAG: &str = "no-rb";
 
@@ -32,7 +32,7 @@ pub const FORK_TAG: &str = "no-rb";
 /// hunting for a config key that does not exist.
 pub fn blocked(what: &str) -> BladeError {
     BladeError::Other(format!(
-        "blocked: {what} is removed in this bladebro build (fork `{FORK_TAG}`, see FORK.md)."
+        "blocked: {what} is removed in this webjitsu build (fork `{FORK_TAG}`, see FORK.md)."
     ))
 }
 

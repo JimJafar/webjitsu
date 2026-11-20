@@ -11,12 +11,12 @@
 use std::process::Command;
 
 fn bin() -> &'static str {
-    env!("CARGO_BIN_EXE_bladebro")
+    env!("CARGO_BIN_EXE_webjitsu")
 }
 
-/// Run `bladebro doctor` with extra env, return stdout.
+/// Run `webjitsu doctor` with extra env, return stdout.
 fn doctor_with(envs: &[(&str, &str)], home: Option<&str>) -> String {
-    let tmp_home = std::env::temp_dir().join(format!("bladebro-xdg-home-{}", std::process::id()));
+    let tmp_home = std::env::temp_dir().join(format!("webjitsu-xdg-home-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&tmp_home);
     std::fs::create_dir_all(&tmp_home).unwrap();
     // Give the fake home a .local so the XDG-default branch is reachable,
@@ -41,13 +41,13 @@ fn doctor_with(envs: &[(&str, &str)], home: Option<&str>) -> String {
 #[cfg(unix)]
 #[test]
 fn blade_home_override_wins() {
-    let out = doctor_with(&[("BLADE_HOME", "/tmp/bladebro-blade-home")], None);
+    let out = doctor_with(&[("BLADE_HOME", "/tmp/webjitsu-blade-home")], None);
     let data_line = out
         .lines()
         .find(|l| l.contains("Data directory"))
         .expect("doctor must print Data directory");
     assert!(
-        data_line.contains("/tmp/bladebro-blade-home"),
+        data_line.contains("/tmp/webjitsu-blade-home"),
         "BLADE_HOME must be honored: {data_line}"
     );
     assert!(
@@ -59,13 +59,13 @@ fn blade_home_override_wins() {
 #[cfg(unix)]
 #[test]
 fn xdg_state_home_resolves_under_it() {
-    let out = doctor_with(&[("XDG_STATE_HOME", "/tmp/bladebro-xdg-state")], None);
+    let out = doctor_with(&[("XDG_STATE_HOME", "/tmp/webjitsu-xdg-state")], None);
     let data_line = out
         .lines()
         .find(|l| l.contains("Data directory"))
         .expect("doctor must print Data directory");
     assert!(
-        data_line.contains("/tmp/bladebro-xdg-state/blade"),
+        data_line.contains("/tmp/webjitsu-xdg-state/blade"),
         "XDG_STATE_HOME must be honored: {data_line}"
     );
 }
@@ -74,7 +74,7 @@ fn xdg_state_home_resolves_under_it() {
 #[test]
 fn missing_local_dir_falls_back_to_legacy() {
     // Home WITHOUT a .local dir at all: resolution falls to ~/.blade.
-    let bare = std::env::temp_dir().join(format!("bladebro-bare-home-{}", std::process::id()));
+    let bare = std::env::temp_dir().join(format!("webjitsu-bare-home-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&bare);
     std::fs::create_dir_all(&bare).unwrap();
     let mut cmd = Command::new(bin());

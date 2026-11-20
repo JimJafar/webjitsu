@@ -1,8 +1,8 @@
 name: CI
 
 # Fast, blocking feedback only. The browser instruments live in probes.yml
-# (nightly, tag, manual) and the platform builds in release.yml (tag) — this
-# file must stay under ~8 minutes of wall clock or it stops being useful.
+# (nightly, tag, manual) and the platform builds in release.yml — deleted in this
+# fork (FORK.md), which is source-only. This file must stay under ~8 minutes.
 on:
   workflow_dispatch:
   push:

@@ -10,7 +10,7 @@ import sys
 import tempfile
 import threading
 
-BINARY = os.environ.get('BLADEBRO', str(Path(__file__).resolve().parents[2] / 'target/release/bladebro'))
+BINARY = os.environ.get('WEBJITSU', str(Path(__file__).resolve().parents[2] / 'target/release/webjitsu'))
 OUT = Path(os.environ.get('POLISH_OUT', 'work/tiny-click.json'))
 OUT.parent.mkdir(parents=True, exist_ok=True)
 checks = []

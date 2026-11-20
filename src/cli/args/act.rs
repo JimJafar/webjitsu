@@ -13,7 +13,7 @@ pub(crate) fn parse_act_args(args: &[String]) -> Result<Value> {
         // Derived from ACT_ACTIONS: the hand-written list had drifted (it
         // omitted dialog and paginate).
         return Err(BladeError::Usage(format!(
-            "act needs an action — {} (see 'bladebro help act')",
+            "act needs an action — {} (see 'webjitsu help act')",
             crate::action::ACT_ACTIONS.join(", ")
         )));
     }
@@ -21,7 +21,7 @@ pub(crate) fn parse_act_args(args: &[String]) -> Result<Value> {
     let action = args[0].as_str();
     if !crate::action::ACT_ACTIONS.contains(&action) {
         return Err(BladeError::Usage(format!(
-            "{} (see 'bladebro help act')",
+            "{} (see 'webjitsu help act')",
             crate::action::unknown_action_message(action)
         )));
     }
@@ -100,7 +100,7 @@ pub(crate) fn parse_act_args(args: &[String]) -> Result<Value> {
                 "print-background" => j["printBackground"] = json!(true),
                 _ => {
                     return Err(BladeError::Usage(format!(
-                        "unknown flag --{flag} for act — see 'bladebro help act'"
+                        "unknown flag --{flag} for act — see 'webjitsu help act'"
                     )))
                 }
             }
@@ -166,7 +166,7 @@ pub(crate) fn parse_act_args(args: &[String]) -> Result<Value> {
             } else if j.get("fields").is_none() {
                 let raw_arg = pos.first().ok_or_else(|| {
                     BladeError::Usage(
-                        "fill needs fields — bladebro act fill '{\"e3\":\"John\",\"e5\":\"Doe\"}' \
+                        "fill needs fields — webjitsu act fill '{\"e3\":\"John\",\"e5\":\"Doe\"}' \
                          [--submit <ref|text>] (or @file / - for big payloads)"
                             .into(),
                     )
@@ -479,7 +479,7 @@ pub(crate) fn parse_act_args(args: &[String]) -> Result<Value> {
                 first.clone()
             } else {
                 return Err(BladeError::Usage(
-                    "batch needs steps — bladebro act batch '[{\"action\":\"click\",\"ref\":\"e5\"}]' \
+                    "batch needs steps — webjitsu act batch '[{\"action\":\"click\",\"ref\":\"e5\"}]' \
                      (or @steps.json / - for stdin)"
                         .into(),
                 ));
@@ -512,7 +512,7 @@ pub(crate) fn parse_act_args(args: &[String]) -> Result<Value> {
             }
             if j.get("target_id").is_none() {
                 return Err(BladeError::Usage(format!(
-                    "{action} needs a tab id — `act {action} <id>` (ids come from `bladebro state tabs`)"
+                    "{action} needs a tab id — `act {action} <id>` (ids come from `webjitsu state tabs`)"
                 )));
             }
         }

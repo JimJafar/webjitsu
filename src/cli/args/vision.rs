@@ -11,12 +11,12 @@ pub(crate) fn parse_vision_args(args: &[String]) -> Result<Value> {
             "--marks" => marks = true,
             s if s.starts_with("--") => {
                 return Err(BladeError::Usage(format!(
-                    "unknown flag {s} for vision — see 'bladebro help vision'"
+                    "unknown flag {s} for vision — see 'webjitsu help vision'"
                 )))
             }
             s => {
                 return Err(BladeError::Usage(format!(
-                    "unexpected argument '{s}' for vision — bladebro vision [--marks]"
+                    "unexpected argument '{s}' for vision — webjitsu vision [--marks]"
                 )))
             }
         }

@@ -402,7 +402,7 @@ pub fn template_failed_critical(id: &str) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// Pids of live bladebro processes running a clone session of `id`. Refreshing
+/// Pids of live webjitsu processes running a clone session of `id`. Refreshing
 /// under one gets its stale copy synced back over the import; wiping under
 /// one deletes the profile its browser is running on.
 pub fn live_clone_sessions(id: &str) -> Vec<u32> {
@@ -419,7 +419,7 @@ pub fn forget(id: &str) -> Result<bool> {
             .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
     {
         return Err(BladeError::Other(format!(
-            "invalid browser id `{id}` — select a browser with `bladebro rb use <id>`"
+            "invalid browser id `{id}` — select a browser with `webjitsu rb use <id>`"
         )));
     }
     let root = root_for(id);

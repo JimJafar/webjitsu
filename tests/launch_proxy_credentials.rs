@@ -26,7 +26,7 @@ fn credentialed_proxy_is_refused_before_chrome_sees_it() {
     .unwrap();
     std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o700)).unwrap();
 
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_bladebro"))
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_webjitsu"))
         .arg("probe")
         .env("BLADE_HOME", root.join("home"))
         .env("BLADE_NO_UPDATE_CHECK", "1")

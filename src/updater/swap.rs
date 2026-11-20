@@ -36,7 +36,7 @@ pub(crate) fn sweep_windows_old(_current: &Path) {}
 ///
 /// 1. Pre-flight writability check.
 /// 2. Back up the current binary FIRST (before touching `current`) to
-///    `<data_dir>/backups/bladebro-v<CURRENT>` using O_EXCL on Unix.
+///    `<data_dir>/backups/webjitsu-v<CURRENT>` using O_EXCL on Unix.
 /// 3. Atomically rename the downloaded binary into place (on Windows:
 ///    rename running exe aside to `.exe.old` first, then rename new binary
 ///    with brief retry for AV scanners, restoring on error).
@@ -77,14 +77,14 @@ pub fn swap_binary(downloaded: &Path) -> Result<PathBuf> {
     Ok(backup)
 }
 
-/// Copy `current` to `<data_dir>/backups/bladebro-v<CURRENT>` safely before
+/// Copy `current` to `<data_dir>/backups/webjitsu-v<CURRENT>` safely before
 /// modifying the live executable.
 fn write_backup(current: &Path) -> Result<PathBuf> {
     let backup_dir = crate::platform::blade_dir().join("backups");
     crate::platform::secure_create_dir_all(&backup_dir)
         .map_err(|e| BladeError::Other(format!("cannot create backup dir: {e}")))?;
 
-    let backup = backup_dir.join(format!("bladebro-v{}", super::CURRENT_VERSION));
+    let backup = backup_dir.join(format!("webjitsu-v{}", super::CURRENT_VERSION));
 
     // Remove old backup if it exists (same version). symlink_metadata, not
     // Path::exists() — exists() follows symlinks, so a pre-planted DANGLING
@@ -139,7 +139,7 @@ fn install_windows_exe(staged: &Path, current: &Path) -> Result<()> {
     }
     std::fs::rename(current, &old_path).map_err(|e| {
         BladeError::Other(format!(
-            "cannot rename current exe (is another bladebro running?). Close it first. Error: {e}"
+            "cannot rename current exe (is another webjitsu running?). Close it first. Error: {e}"
         ))
     })?;
 
@@ -189,7 +189,7 @@ fn check_writable(current: &Path) -> Result<()> {
         .map(|d| d.as_nanos())
         .unwrap_or(0);
     let test_file = parent.join(format!(
-        ".bladebro-write-test-{}-{nanos}",
+        ".webjitsu-write-test-{}-{nanos}",
         std::process::id()
     ));
     match std::fs::OpenOptions::new()
@@ -212,22 +212,22 @@ fn check_writable(current: &Path) -> Result<()> {
                     if version::is_package_managed() {
                         format!(
                             "This binary is managed by {}. Use: {update_cmd}\n  \
-                             Or if you need self-update: sudo bladebro -u --force",
+                             Or if you need self-update: sudo webjitsu -u --force",
                             version::install_channel_label()
                         )
                     } else if cfg!(windows) {
                         "Permission denied. Run your terminal as Administrator, \
-                         or update via npm: npm install -g bladebro"
+                         or update via npm: npm install -g webjitsu"
                             .to_string()
                     } else {
-                        "Permission denied. Try: sudo bladebro -u\n  \
-                         Or update via npm: npm install -g bladebro"
+                        "Permission denied. Try: sudo webjitsu -u\n  \
+                         Or update via npm: npm install -g webjitsu"
                             .to_string()
                     }
                 }
                 std::io::ErrorKind::ReadOnlyFilesystem => "Filesystem is read-only. \
                      Cannot update in place. \
-                     Use: npm install -g bladebro"
+                     Use: npm install -g webjitsu"
                     .to_string(),
                 _ => format!("cannot write to {}: {e}", parent.display()),
             };
@@ -246,7 +246,7 @@ fn prune_backups(backup_dir: &Path) {
         Err(_) => return,
     };
 
-    backups.retain(|e| e.file_name().to_string_lossy().starts_with("bladebro-v"));
+    backups.retain(|e| e.file_name().to_string_lossy().starts_with("webjitsu-v"));
 
     if backups.len() <= MAX_BACKUPS {
         return;
@@ -273,7 +273,7 @@ fn list_backups(backup_dir: &Path) -> Vec<(PathBuf, String, u64)> {
 
     let mut backups: Vec<(PathBuf, String, u64)> = entries
         .filter_map(|e| e.ok())
-        .filter(|e| e.file_name().to_string_lossy().starts_with("bladebro-v"))
+        .filter(|e| e.file_name().to_string_lossy().starts_with("webjitsu-v"))
         .map(|e| {
             let name = e.file_name().to_string_lossy().to_string();
             let size = e.metadata().map(|m| m.len()).unwrap_or(0);
@@ -348,7 +348,7 @@ pub async fn rollback() -> Result<()> {
             }
             return Err(BladeError::Other(format!(
                 "no valid backups could be restored (last error: {e})\n  \
-                 Reinstall: npm install -g bladebro"
+                 Reinstall: npm install -g webjitsu"
             )));
         }
         spin.finish_ok(&format!(
@@ -368,7 +368,7 @@ pub async fn rollback() -> Result<()> {
 
     Err(BladeError::Other(
         "all backups are corrupted. Nothing to roll back to.\n  \
-         Reinstall: npm install -g bladebro"
+         Reinstall: npm install -g webjitsu"
             .into(),
     ))
 }
@@ -560,14 +560,14 @@ mod backup_verify_tests {
         let mut data = vec![0u8; 1_000_100];
         platform_magic(&mut data);
         std::fs::write(&victim, &data).unwrap();
-        let link = dir.join("bladebro-v9.9.9");
+        let link = dir.join("webjitsu-v9.9.9");
         std::os::unix::fs::symlink(&victim, &link).unwrap();
         assert!(
             verify_backup(&link).is_err(),
             "a symlinked backup must be refused"
         );
         assert!(verify_backup(&dir).is_err(), "a directory is not a backup");
-        let real = dir.join("bladebro-v9.9.8");
+        let real = dir.join("webjitsu-v9.9.8");
         std::fs::write(&real, &data).unwrap();
         assert!(
             verify_backup(&real).is_ok(),

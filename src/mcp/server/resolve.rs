@@ -375,7 +375,7 @@ fn selector_diag_note(diag: Option<&crate::action::SelectorDiag>) -> String {
         );
     }
     // W3: the selector matched nothing anywhere - say the counts outright so
-    // "the selector is wrong" and "bladebro cannot match" are distinguishable
+    // "the selector is wrong" and "webjitsu cannot match" are distinguishable
     // (the HN `a.titleline` detour: only a manual querySelectorAll proved 0).
     " - 0 raw matches, 0 actionable: the selector matched nothing - check its spelling against the live page (see mode=model lists the real tags/classes)".to_string()
 }

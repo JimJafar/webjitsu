@@ -17,7 +17,7 @@ pub(crate) fn parse_nav_args(args: &[String]) -> Result<Value> {
                 "block" => block = Some(take_value(args, &mut i, "block")?),
                 _ => {
                     return Err(BladeError::Usage(format!(
-                        "unknown flag --{flag} for nav — see 'bladebro help nav'"
+                        "unknown flag --{flag} for nav — see 'webjitsu help nav'"
                     )))
                 }
             }
@@ -31,7 +31,7 @@ pub(crate) fn parse_nav_args(args: &[String]) -> Result<Value> {
         i += 1;
     }
     let url =
-        url.ok_or_else(|| BladeError::Usage("nav needs a URL — bladebro nav <url>".into()))?;
+        url.ok_or_else(|| BladeError::Usage("nav needs a URL — webjitsu nav <url>".into()))?;
     let mut j = json!({ "action": "navigate", "url": url });
     if let Some(b) = block {
         j["block"] = json!(b);

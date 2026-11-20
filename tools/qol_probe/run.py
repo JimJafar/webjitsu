@@ -49,8 +49,8 @@ Asserted behaviors (the contract):
       JSON (zero preamble); a zero-match selector miss reports raw counts.
 
 Environment is isolated (own BLADE_HOME, own fixture port, no display leak).
-Run:  python3 tools/qol_probe/run.py            (uses target/release/bladebro)
-      BLADEBRO=/path/to/bladebro python3 tools/qol_probe/run.py
+Run:  python3 tools/qol_probe/run.py            (uses target/release/webjitsu)
+      WEBJITSU=/path/to/webjitsu python3 tools/qol_probe/run.py
 Exit code 0 = all passed.
 """
 import json
@@ -66,7 +66,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(ROOT, "..", ".."))
 HOME = os.environ.get("QOL_PROBE_HOME", "/tmp/qol_probe_home")
 PORT = int(os.environ.get("QOL_PROBE_PORT", "8794"))
-BINARY = os.environ.get("BLADEBRO", os.path.join(REPO, "target", "release", "bladebro"))
+BINARY = os.environ.get("WEBJITSU", os.path.join(REPO, "target", "release", "webjitsu"))
 URL = f"http://127.0.0.1:{PORT}/editor.html"
 
 passed, failed = 0, 0

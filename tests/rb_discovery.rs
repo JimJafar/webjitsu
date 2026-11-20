@@ -1,4 +1,4 @@
-// FORK: every test in this file drives `bladebro rb`, whose lane this build removes
+// FORK: every test in this file drives `webjitsu rb`, whose lane this build removes
 // (see FORK.md). They are kept so the upstream coverage survives a rebase and a
 // future re-enable, and marked #[ignore] so the suite reports them honestly.
 
@@ -46,7 +46,7 @@ impl Fixture {
     }
 
     fn cli(&self, args: &[&str]) -> Value {
-        let output = Command::new(env!("CARGO_BIN_EXE_bladebro"))
+        let output = Command::new(env!("CARGO_BIN_EXE_webjitsu"))
             .args(["--json", "rb"])
             .args(args)
             .env("HOME", self.0.join("home"))
@@ -154,7 +154,7 @@ fn relative_and_empty_config_homes_do_not_select_cwd_profiles() {
     std::fs::create_dir_all(root.join("Default")).unwrap();
     std::fs::write(root.join("Default/Preferences"), "{}").unwrap();
     for invalid in ["", "relative"] {
-        let output = Command::new(env!("CARGO_BIN_EXE_bladebro"))
+        let output = Command::new(env!("CARGO_BIN_EXE_webjitsu"))
             .args(["--json", "rb", "use"])
             .current_dir(&f.0)
             .env("HOME", f.0.join("home"))
@@ -195,7 +195,7 @@ fn forget_refuses_path_ids_without_deleting_outside_its_namespace() {
             json!({"browser": id}).to_string(),
         )
         .unwrap();
-        let output = Command::new(env!("CARGO_BIN_EXE_bladebro"))
+        let output = Command::new(env!("CARGO_BIN_EXE_webjitsu"))
             .args(["--json", "rb", "forget"])
             .env("BLADE_HOME", &blade)
             .output()

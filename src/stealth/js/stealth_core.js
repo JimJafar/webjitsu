@@ -69,7 +69,7 @@ if(!window.chrome.loadTimes){window.chrome.loadTimes=_fix(_mkN(function(){return
 }catch(e){}
 
 // Speech synthesis voices: NO PATCH (removed v3.9.12). The fixed 3-voice
-// Google set was a cluster signature shared by every Bladebro profile;
+// Google set was a cluster signature shared by every WebJitsu profile;
 // the machine truth (0 voices without speech-dispatcher, the real list
 // with it) is coherent and unremarkable — the differential oracle shows
 // stock Chrome on the same box reports 0.

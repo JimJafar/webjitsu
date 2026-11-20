@@ -16,7 +16,7 @@ async fn launch_errors_preserve_dialect_and_notification_silence() {
             json!({"jsonrpc":"2.0","method":"tools/call","params":params}),
             json!({"jsonrpc":"2.0","id":2,"method":"ping","params":{}}),
         ];
-        let mut child = tokio::process::Command::new(env!("CARGO_BIN_EXE_bladebro"))
+        let mut child = tokio::process::Command::new(env!("CARGO_BIN_EXE_webjitsu"))
             .arg("mcp")
             .env(
                 "BLADE_HOME",
@@ -62,7 +62,7 @@ async fn launch_errors_preserve_dialect_and_notification_silence() {
             assert_eq!(result["resultType"], "complete", "{responses:?}");
             assert_eq!(
                 result["_meta"]["io.modelcontextprotocol/serverInfo"]["name"],
-                "bladebro"
+                "webjitsu"
             );
         } else {
             assert!(result.get("resultType").is_none());

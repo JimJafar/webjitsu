@@ -23,8 +23,8 @@ echo "› cargo build --release"
 cargo build --release
 
 mkdir -p "$DEST"
-install -m 0755 target/release/bladebro "$DEST/bladebro"
-BIN="$DEST/bladebro"
+install -m 0755 target/release/webjitsu "$DEST/webjitsu"
+BIN="$DEST/webjitsu"
 
 echo "› installed $BIN"
 
@@ -42,14 +42,24 @@ echo "› gates verified: -v reports fork no-rb, and 'rb use' is refused"
 
 cat <<EOF
 
-Point your MCP client at this path (not 'bladebro' from npm, not npx):
+Point your MCP client at this path (there is no 'webjitsu' on npm, and npx would
+fetch upstream's bladebro, which has the lane):
 
   {
     "mcpServers": {
-      "bladebro": { "command": "$BIN", "args": ["mcp"] }
+      "webjitsu": { "command": "$BIN", "args": ["mcp"] }
     }
   }
 
-If a shell alias, an npm global install, or /usr/local/bin/bladebro is earlier
-on your PATH, that copy still has the lane — check with:  command -v bladebro
+From Pi, register the same five tools as an extension:
+
+  pi install $ROOT/npm/webjitsu
+
+If Pi loads that package from elsewhere, or you keep the binary somewhere other
+than ~/.local/bin, point it at the build explicitly:
+
+  export WEBJITSU_BIN=$BIN
+
+If a shell alias, an npm global install, or /usr/local/bin/webjitsu is earlier on
+your PATH, that copy may be a different build — check with:  command -v webjitsu
 EOF

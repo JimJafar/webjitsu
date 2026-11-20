@@ -9,13 +9,13 @@
 
 use std::sync::{Arc, Mutex};
 
-use bladebro::cdp::{CdpClient, CdpSession};
-use bladebro::page::intercept::{run_interception, InterceptState, BLOCK_IMAGES, BLOCK_TRACKERS};
 use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
 use tokio::net::TcpListener;
 use tokio_tungstenite::accept_async;
 use tokio_tungstenite::tungstenite::Message;
+use webjitsu::cdp::{CdpClient, CdpSession};
+use webjitsu::page::intercept::{run_interception, InterceptState, BLOCK_IMAGES, BLOCK_TRACKERS};
 
 const MAIN: &str = "MAIN-FRAME";
 const CHILD: &str = "CHILD-FRAME";

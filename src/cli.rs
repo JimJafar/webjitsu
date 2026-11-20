@@ -6,14 +6,14 @@
 //! surfaces — zero maintenance overhead.
 //!
 //! Two modes:
-//! - **Daemon**: `bladebro daemon` starts a persistent Chrome session.
-//!   Subsequent `bladebro` commands connect to it via Unix socket.
+//! - **Daemon**: `webjitsu daemon` starts a persistent Chrome session.
+//!   Subsequent `webjitsu` commands connect to it via Unix socket.
 //!   Same lifecycle as MCP (self-healing, idle timeout, reaper).
 //! - **One-shot**: if no daemon is running, each command launches Chrome,
 //!   runs, and exits.
 //!
 //! Agent contract (v3.9.7):
-//! - `bladebro help [--json]` is the single self-teaching surface: the JSON
+//! - `webjitsu help [--json]` is the single self-teaching surface: the JSON
 //!   form carries the same tool schemas as MCP `tools/list` plus CLI-only
 //!   details (usage, examples, exit codes, stdin/@file payloads).
 //! - `--json` on any command prints ONE machine-readable object on stdout:
@@ -265,7 +265,7 @@ pub async fn dispatch(
 
 /// Auto-start the daemon as a detached background process.
 /// The first CLI command triggers this — the agent never needs to
-/// run `bladebro daemon` explicitly.
+/// run `webjitsu daemon` explicitly.
 ///
 /// SECURITY: spawns the binary DIRECTLY (no `sh -c`). The old shell path
 /// interpolated the exe path into single quotes — an install path
@@ -273,7 +273,7 @@ pub async fn dispatch(
 #[cfg(unix)]
 fn auto_start_daemon() -> Result<()> {
     let exe = std::env::current_exe()
-        .map_err(|e| BladeError::Other(format!("cannot find bladebro binary: {e}")))?;
+        .map_err(|e| BladeError::Other(format!("cannot find webjitsu binary: {e}")))?;
     use std::os::unix::process::CommandExt;
     let mut cmd = std::process::Command::new(&exe);
     cmd.arg("daemon")
@@ -414,7 +414,7 @@ fn send_to_daemon(req: &str) -> std::result::Result<ToolResult, DaemonCallError>
             return Err(BladeError::Other(format!(
                 "no daemon response after {timeout_secs}s — the command may still be running\n\
                  (the daemon runs one command at a time; others queue behind it). Raise the\n\
-                 client limit with BLADE_CMD_TIMEOUT=<seconds>, or cancel it with 'bladebro stop'\n\
+                 client limit with BLADE_CMD_TIMEOUT=<seconds>, or cancel it with 'webjitsu stop'\n\
                  (terminates the daemon; Chrome restarts on the next command, page state reset)."
             ))
             .into());
@@ -430,7 +430,7 @@ fn send_to_daemon(req: &str) -> std::result::Result<ToolResult, DaemonCallError>
     if resp.trim().is_empty() {
         return Err(BladeError::Other(
             "the daemon closed the connection without replying — the command may have run.\n\
-             Check with 'bladebro state tabs' before repeating it."
+             Check with 'webjitsu state tabs' before repeating it."
                 .into(),
         )
         .into());
@@ -609,7 +609,7 @@ async fn run_cli_inner(
                     Some(t) => print!("{t}"),
                     None => {
                         return Err(BladeError::Usage(format!(
-                            "unknown command '{}' — run 'bladebro help' for the command list",
+                            "unknown command '{}' — run 'webjitsu help' for the command list",
                             rest[0]
                         )))
                     }
@@ -618,7 +618,7 @@ async fn run_cli_inner(
             Ok(())
         }
         _ => Err(BladeError::Usage(format!(
-            "unknown command: {cmd} — run 'bladebro help' for the command list"
+            "unknown command: {cmd} — run 'webjitsu help' for the command list"
         ))),
     }
 }
@@ -675,7 +675,7 @@ async fn run_tool(
                         // below clears a stale one itself, under its lock —
                         // an unlink from this unlocked client could hit a
                         // live daemon's socket and orphan it.
-                        eprintln!("[bladebro] daemon unreachable ({e}) — restarting it");
+                        eprintln!("[webjitsu] daemon unreachable ({e}) — restarting it");
                     }
                     // Alive but the call failed: do not kill or bypass.
                     Err(DaemonCallError::Failed(e)) => return Err(e),
@@ -706,7 +706,7 @@ async fn run_tool(
                     }
                     // Never delivered: running it one-shot is its first run.
                     Err(DaemonCallError::Unreachable(e)) => eprintln!(
-                        "[bladebro] daemon unreachable after auto-start ({e}), falling back to one-shot"
+                        "[webjitsu] daemon unreachable after auto-start ({e}), falling back to one-shot"
                     ),
                     // Delivered: the daemon may have acted (a click that
                     // landed before "outcome UNKNOWN", a command still
@@ -716,8 +716,8 @@ async fn run_tool(
                 }
             } else {
                 eprintln!(
-                    "[bladebro] daemon didn't come up within 10s — falling back to one-shot\n\
-                     (run 'bladebro daemon' in a terminal to see startup errors)"
+                    "[webjitsu] daemon didn't come up within 10s — falling back to one-shot\n\
+                     (run 'webjitsu daemon' in a terminal to see startup errors)"
                 );
             }
         }
@@ -729,7 +729,7 @@ async fn run_tool(
     // That includes Ctrl-C, a harness's or `timeout`'s SIGTERM and a closed
     // terminal's SIGHUP: caught from before the launch on, they end the run,
     // not the process, which would never close Chrome (it runs in its own
-    // process group); bladebro dies of the signal only once Chrome is closed
+    // process group); webjitsu dies of the signal only once Chrome is closed
     // (`platform::reraise_termination_signal`, at exit). One that lands
     // mid-launch lets the launch finish (the launch paths are not all safe
     // to drop half-way) but stops its retries.
@@ -763,7 +763,7 @@ async fn run_tool(
 
 /// Attach to a page at `base`, run one tool call, return the result.
 ///
-/// `external=true` drives a browser Bladebro does not own (an already-running
+/// `external=true` drives a browser WebJitsu does not own (an already-running
 /// Chrome reached via `--host`/`--port`): it must NOT re-inject saved logins,
 /// warm the profile (no surprise navigation away from the user's tab), or shut
 /// Chrome down. `external=false` owns the browser, so it restores logins,
@@ -791,7 +791,7 @@ async fn run_connected(tool: &str, args: &Value, base: &str, external: bool) -> 
     // external browser we don't own.
     if !external {
         if let Err(e) = crate::logins::snapshot(page.cdp_ref()).await {
-            eprintln!("[bladebro] login snapshot failed: {e}");
+            eprintln!("[webjitsu] login snapshot failed: {e}");
         }
     }
 
@@ -923,7 +923,7 @@ async fn warm_profile(page: &mut Page) {
     }
     if ok > 0 {
         eprintln!(
-            "[bladebro] profile warmed ({ok}/{} sites visited)",
+            "[webjitsu] profile warmed ({ok}/{} sites visited)",
             sites.len()
         );
     }

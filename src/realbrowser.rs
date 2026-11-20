@@ -1,6 +1,6 @@
-//! Real-browser lane (`bladebro rb`).
+//! Real-browser lane (`webjitsu rb`).
 //!
-//! Bladebro's default lane owns an isolated Chromium + seasoned profile on a
+//! WebJitsu's default lane owns an isolated Chromium + seasoned profile on a
 //! virtual display, and manufactures coherence with a page-injection layer.
 //! The real-browser lane is the opposite trade, and for protected sites the
 //! stronger one: the agent drives the user's OWN Chromium-family browser —
@@ -484,7 +484,7 @@ mod tests {
             std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
         }
         assert!(validate_binary_override(&exe.display().to_string()).is_ok());
-        assert!(validate_binary_override("/nonexistent/bladebro-browser").is_err());
+        assert!(validate_binary_override("/nonexistent/webjitsu-browser").is_err());
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;

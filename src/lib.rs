@@ -1,4 +1,4 @@
-//! Bladebro — an agentic browser driver for AI.
+//! WebJitsu — an agentic browser driver for AI.
 //!
 //! Core thesis: the agent driving the browser should perceive the page as a
 //! side-effect of acting, not by pulling snapshots every turn. The driver

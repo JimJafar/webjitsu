@@ -1,6 +1,6 @@
 //! Noir Syndicate ("Mafia Don") terminal color engine.
 //!
-//! Palette mirrors Bladebro's README identity: obsidian darks, signature
+//! Palette mirrors WebJitsu's README identity: obsidian darks, signature
 //! crimson (`#D52932`), antique gold (`#D4AF37`), champagne letterpress cream
 //! (`#F2E8D5`), emerald velvet (`#2ECC71`), cigar amber (`#E5A93C`), and smoke
 //! (`#8E929F`). Automatically negotiates TrueColor → 256-color → 16-color →
@@ -167,7 +167,7 @@ pub fn bold_gold(s: &str) -> String {
     paint_tier(stdout_tier(), (236, 201, 91), true, 220, "1;33", s)
 }
 
-/// Bladebro Signature Crimson (`#D52932`).
+/// WebJitsu Signature Crimson (`#D52932`).
 pub fn crimson(s: &str) -> String {
     paint_tier(stdout_tier(), (213, 41, 50), false, 160, "31", s)
 }

@@ -941,7 +941,7 @@ mod extract_script_tests {
                 return;
             }
             let path =
-                std::env::temp_dir().join(format!("bladebro-js-check-extract-{post_marker}.js"));
+                std::env::temp_dir().join(format!("webjitsu-js-check-extract-{post_marker}.js"));
             std::fs::write(&path, &js).expect("write js fixture");
             let out = std::process::Command::new("node")
                 .arg("--check")
@@ -1076,7 +1076,7 @@ mod extract_script_tests {
             eprintln!("node not available — skipping template script syntax check");
             return;
         }
-        let path = std::env::temp_dir().join("bladebro-js-check-template.js");
+        let path = std::env::temp_dir().join("webjitsu-js-check-template.js");
         std::fs::write(&path, &js).expect("write js fixture");
         let out = std::process::Command::new("node")
             .arg("--check")

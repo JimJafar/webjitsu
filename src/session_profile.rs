@@ -3,7 +3,7 @@
 //!
 //! ## The problem
 //!
-//! Every bladebro process used to share `~/.blade/profile`.
+//! Every webjitsu process used to share `~/.blade/profile`.
 //! Chrome's SingletonLock meant a second session's launch had
 //! to KILL the first session's live Chrome — and if both were
 //! alive, they murdered each other's browsers in a loop. On
@@ -18,7 +18,7 @@
 //!   profile/              ← seasoned TEMPLATE (never held by a running Chrome)
 //!   profiles/
 //!     sess-<pid>/         ← per-process live profile (Chrome's user-data-dir)
-//!       .blade-owner      ← bladebro's pid (ownership for the reaper)
+//!       .blade-owner      ← webjitsu's pid (ownership for the reaper)
 //! ```
 //!
 //! - **Launch**: reap orphans → copy template → session dir →
@@ -209,7 +209,7 @@ fn prepare_custom_profile_dir(d: &Path) -> Result<()> {
                 let mode = meta.permissions().mode() & 0o777;
                 if mode & 0o077 != 0 {
                     eprintln!(
-                        "[bladebro] WARNING: BLADE_PROFILE_DIR {} is group/other-accessible ({mode:o}) — it holds cookies and localStorage",
+                        "[webjitsu] WARNING: BLADE_PROFILE_DIR {} is group/other-accessible ({mode:o}) — it holds cookies and localStorage",
                         d.display()
                     );
                 }
@@ -261,7 +261,7 @@ fn create_ephemeral_profile_dir() -> Result<PathBuf> {
         ))
     })?;
     for _ in 0..5 {
-        let candidate = base.join(format!("bladebro-chrome-{:x}", fresh_profile_entropy()));
+        let candidate = base.join(format!("webjitsu-chrome-{:x}", fresh_profile_entropy()));
         match std::fs::create_dir(&candidate) {
             Ok(()) => {
                 #[cfg(unix)]
@@ -301,7 +301,7 @@ fn fresh_profile_entropy() -> u128 {
 
 impl SessionProfile {
     /// Create the session profile for this process: reap
-    /// orphans from dead bladebro processes, then copy the
+    /// orphans from dead webjitsu processes, then copy the
     /// seasoned template into a fresh per-process dir.
     pub fn create() -> Result<Self> {
         reap_orphans();
@@ -391,7 +391,7 @@ impl SessionProfile {
     /// Create a real-lane session profile (clone mechanism): copy the
     /// imported template at `root/template` into a per-process session dir
     /// under `root/profiles/` — the same discipline the agent lane uses for
-    /// its own template, so concurrent bladebro processes (daemon + MCP)
+    /// its own template, so concurrent webjitsu processes (daemon + MCP)
     /// never contend Chrome's SingletonLock on the clone, and the clone
     /// still ages through the sole-survivor sync-back.
     pub fn create_real(root: &Path) -> Result<Self> {
@@ -651,7 +651,7 @@ impl SessionProfile {
             Self::sync_back_and_remove(dir);
         } else {
             // Ephemeral (BLADE_FRESH) dir: only a dir WE created — an
-            // unpredictable `bladebro-chrome-<entropy>` name directly under
+            // unpredictable `webjitsu-chrome-<entropy>` name directly under
             // temp_dir whose owner marker names this pid — is removed. The
             // name is entropy-based since 2026-10-07 (a pid-predictable
             // name was the pre-plant target), so the marker, not the name,
@@ -662,7 +662,7 @@ impl SessionProfile {
                 .is_some_and(|p| p == std::env::temp_dir().as_path());
             let named = dir
                 .file_name()
-                .map(|n| n.to_string_lossy().starts_with("bladebro-chrome-"))
+                .map(|n| n.to_string_lossy().starts_with("webjitsu-chrome-"))
                 .unwrap_or(false);
             let mine = std::fs::read_to_string(dir.join(".blade-owner"))
                 .ok()
@@ -712,7 +712,7 @@ impl SessionProfile {
             // without one, so their sync-back is unchanged.
             if import_generation(dir) != import_generation(&template) {
                 eprintln!(
-                    "[bladebro] the clone was re-imported while session {} ran — its copy \
+                    "[webjitsu] the clone was re-imported while session {} ran — its copy \
                      is discarded instead of overwriting the new import",
                     dir.display()
                 );
@@ -761,7 +761,7 @@ fn import_generation(dir: &Path) -> Option<String> {
         .map(|s| s.trim().to_string())
 }
 
-/// Owner pids of live bladebro sessions under `profiles` (this process
+/// Owner pids of live webjitsu sessions under `profiles` (this process
 /// excluded) — what `rb refresh` / `rb forget` must not run under. A dir
 /// still being created has no `.blade-owner` yet; its `sess-<pid>` name
 /// stands in, as in the reaper.
@@ -859,7 +859,7 @@ fn rescue_same_pid_leftover(root: &Path, dir: &Path, real_root: Option<&Path>) -
         return Ok(());
     }
     Err(BladeError::Other(format!(
-        "session profile {d} is still in use by a process (browser or launcher) that an earlier bladebro process with this pid left running; stop the process started with --user-data-dir={d}, then retry",
+        "session profile {d} is still in use by a process (browser or launcher) that an earlier webjitsu process with this pid left running; stop the process started with --user-data-dir={d}, then retry",
         d = dir.display()
     )))
 }
@@ -892,7 +892,7 @@ pub fn real_root_of_session(dir: &Path) -> Option<PathBuf> {
     }
 }
 
-/// Are there OTHER session dirs under `profiles` whose owner bladebro is
+/// Are there OTHER session dirs under `profiles` whose owner webjitsu is
 /// alive?
 fn other_live_sessions_at(profiles: &Path) -> bool {
     let my_pid = std::process::id();
@@ -952,7 +952,7 @@ mod tests {
         let b = create_ephemeral_profile_dir().unwrap();
         assert_ne!(a, b, "names must be unpredictable, not pid-based");
         let name = a.file_name().unwrap().to_string_lossy().to_string();
-        assert!(name.starts_with("bladebro-chrome-"));
+        assert!(name.starts_with("webjitsu-chrome-"));
         let meta = std::fs::metadata(&a).unwrap();
         assert!(meta.is_dir());
         assert_eq!(meta.permissions().mode() & 0o777, 0o700);
@@ -976,7 +976,7 @@ mod tests {
         SessionProfile::cleanup_dir(&b);
         assert!(b.exists(), "a foreign marker must never authorize removal");
         // ...and an unmarked plant at a scheme name survives too.
-        let planted = std::env::temp_dir().join("bladebro-chrome-planted-test");
+        let planted = std::env::temp_dir().join("webjitsu-chrome-planted-test");
         let _ = std::fs::remove_dir_all(&planted);
         std::fs::create_dir_all(&planted).unwrap();
         SessionProfile::cleanup_dir(&planted);
@@ -1019,8 +1019,8 @@ mod tests {
 
     #[test]
     fn copy_skips_singleton_files() {
-        let src = std::env::temp_dir().join("bladebro-test-copy-src");
-        let dst = std::env::temp_dir().join("bladebro-test-copy-dst");
+        let src = std::env::temp_dir().join("webjitsu-test-copy-src");
+        let dst = std::env::temp_dir().join("webjitsu-test-copy-dst");
         let _ = std::fs::remove_dir_all(&src);
         let _ = std::fs::remove_dir_all(&dst);
         std::fs::create_dir_all(src.join("Default")).unwrap();
@@ -1043,7 +1043,7 @@ mod tests {
         // A real profile's extension packages nest well past six levels
         // (uBlock Origin ships lib/codemirror/addon/<group>/*.js); a clone
         // that silently drops those files breaks the user's extensions.
-        let root = std::env::temp_dir().join(format!("bladebro-test-deep-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("webjitsu-test-deep-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let (src, dst) = (root.join("src"), root.join("dst"));
         let rel = "Default/Extensions/cjpalhdlnbpafiamejdnhcphjbkeiagm/1.62.0_0/lib/codemirror/addon/fold/foldcode.js";
@@ -1060,7 +1060,7 @@ mod tests {
     #[test]
     fn copy_reports_what_the_depth_bound_cuts() {
         let root =
-            std::env::temp_dir().join(format!("bladebro-test-too-deep-{}", std::process::id()));
+            std::env::temp_dir().join(format!("webjitsu-test-too-deep-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let (src, dst) = (root.join("src"), root.join("dst"));
         let mut leaf = src.clone();
@@ -1084,8 +1084,8 @@ mod tests {
 
     #[test]
     fn copy_tolerates_missing_src() {
-        let src = std::env::temp_dir().join("bladebro-test-nonexistent");
-        let dst = std::env::temp_dir().join("bladebro-test-copy-dst2");
+        let src = std::env::temp_dir().join("webjitsu-test-nonexistent");
+        let dst = std::env::temp_dir().join("webjitsu-test-copy-dst2");
         let _ = std::fs::remove_dir_all(&dst);
         copy_profile(&src, &dst); // must not panic
     }
@@ -1098,7 +1098,7 @@ mod tests {
     #[test]
     fn stale_lock_with_dead_owner_is_broken_and_acquired() {
         // Hermetic: locks live in a temp dir, never the shared real one.
-        let dir = std::env::temp_dir().join(format!("bladebro-lock-dead-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("webjitsu-lock-dead-{}", std::process::id()));
         let _ = std::fs::create_dir_all(&dir);
         let lock = dir.join(".template.lock.test-dead");
         let _ = std::fs::remove_file(&lock);
@@ -1115,7 +1115,7 @@ mod tests {
     #[test]
     fn stale_lock_with_live_owner_is_not_stale() {
         // Hermetic: locks live in a temp dir, never the shared real one.
-        let dir = std::env::temp_dir().join(format!("bladebro-lock-live-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("webjitsu-lock-live-{}", std::process::id()));
         let _ = std::fs::create_dir_all(&dir);
         let lock = dir.join(".template.lock.test-live");
         let _ = std::fs::remove_file(&lock);
@@ -1294,7 +1294,7 @@ mod tests {
         // split across two directories by a flip — and it mutated the real
         // install (deleted its session dirs, swapped its template).
         let root =
-            std::env::temp_dir().join(format!("bladebro-test-reaper-{}", std::process::id()));
+            std::env::temp_dir().join(format!("webjitsu-test-reaper-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let profiles_dir = root.join("profiles");
         let template_dir = root.join("profile");
@@ -1344,7 +1344,7 @@ mod tests {
     #[test]
     fn real_sync_back_never_overwrites_a_newer_import() {
         let home =
-            std::env::temp_dir().join(format!("bladebro-test-reimport-{}", std::process::id()));
+            std::env::temp_dir().join(format!("webjitsu-test-reimport-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&home);
         let root = home.join("realbrowser/helium");
         let template = root.join("template");
@@ -1397,7 +1397,7 @@ mod tests {
     fn reaper_restores_template_displaced_by_interrupted_swap() {
         // Hermetic: run against a temp blade dir, not the shared ~/.blade that
         // other reaper tests mutate in parallel.
-        let blade_dir = std::env::temp_dir().join("bladebro-test-swap");
+        let blade_dir = std::env::temp_dir().join("webjitsu-test-swap");
         let _ = std::fs::remove_dir_all(&blade_dir);
 
         // Simulate the crash state: template was moved aside, new copy never

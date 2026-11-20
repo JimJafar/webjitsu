@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new capability for Bladebro
+description: Suggest a new capability for WebJitsu
 labels: ["enhancement"]
 body:
   - type: textarea

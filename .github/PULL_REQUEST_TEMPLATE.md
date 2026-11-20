@@ -16,6 +16,6 @@
 
 ## Stealth Changes (if applicable)
 
-- [ ] `bladebro audit` reports zero `FAIL` lines with stable stamps
+- [ ] `webjitsu audit` reports zero `FAIL` lines with stable stamps
 - [ ] `python3 tools/diff_oracle/oracle.py` reports `divergent: 0`
 - [ ] Live checks pass (`bot.sannysoft.com`, `incolumitas.com`, `abrahamjuliot.github.io/creepjs` 0% headless / 0% stealth) — paste before/after summary below

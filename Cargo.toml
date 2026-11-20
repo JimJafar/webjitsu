@@ -1,5 +1,5 @@
 [package]
-name = "bladebro"
+name = "webjitsu"
 version = "4.8.2"
 edition = "2021"
 rust-version = "1.86"
@@ -8,11 +8,11 @@ description = "An agentic browser driver for AI — few tools, full control, rea
 repository = "https://github.com/dondai44423/bladebro"
 
 [lib]
-name = "bladebro"
+name = "webjitsu"
 path = "src/lib.rs"
 
 [[bin]]
-name = "bladebro"
+name = "webjitsu"
 path = "src/main.rs"
 
 [[test]]

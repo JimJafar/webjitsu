@@ -1,5 +1,5 @@
 //! Build script: embed the git commit SHA + dirty flag into
-//! the binary so `bladebro -v` can identify exactly what code
+//! the binary so `webjitsu -v` can identify exactly what code
 //! it's running. When the tree is clean, the SHA matches a
 //! commit; when dirty, "-dirty" marks an unreleased build.
 //!

@@ -1,4 +1,4 @@
-//! System diagnostics — the Mafia Don "System Dossier" (`bladebro doctor`).
+//! System diagnostics — the Mafia Don "System Dossier" (`webjitsu doctor`).
 //!
 //! Runs local filesystem/environment probes immediately and executes async
 //! checks (Chrome `--version` + one shared release-registry check) **in
@@ -186,7 +186,7 @@ pub async fn run() -> Result<()> {
     if fails == 0 && warns == 0 {
         ui::verdict_card(
             ui::Tone::Success,
-            &format!("ALL {total} CHECKS CLEAR · BLADEBRO IS HEALTHY"),
+            &format!("ALL {total} CHECKS CLEAR · WEBJITSU IS HEALTHY"),
             &elapsed,
             &[],
         );
@@ -200,7 +200,7 @@ pub async fn run() -> Result<()> {
             &elapsed,
             &[(
                 "note",
-                "Bladebro is operational; review advisories above".into(),
+                "WebJitsu is operational; review advisories above".into(),
             )],
         );
     } else {
@@ -213,7 +213,7 @@ pub async fn run() -> Result<()> {
             &elapsed,
             &[(
                 "next",
-                "Fix the failures above, then run `bladebro doctor` again".into(),
+                "Fix the failures above, then run `webjitsu doctor` again".into(),
             )],
         );
         return Err(crate::error::BladeError::Other(format!(
@@ -529,7 +529,7 @@ fn check_profile_dir() -> Check {
         .map(|d| d.as_nanos())
         .unwrap_or(0);
     let test_file = dir.join(format!(
-        ".bladebro-write-test-{}-{nanos}",
+        ".webjitsu-write-test-{}-{nanos}",
         std::process::id()
     ));
     match std::fs::OpenOptions::new()
@@ -768,8 +768,8 @@ fn custom_profile_lock(dir: &std::path::Path) -> Check {
                     group: Group::Vault,
                     name: "Profile locks",
                     status: Status::Warn,
-                    detail: format!("lock held by PID {p} (another bladebro may be running)"),
-                    fix: Some("Close other bladebro instances, or use BLADE_PROFILE_DIR pointing at an empty directory only you can write".into()),
+                    detail: format!("lock held by PID {p} (another webjitsu may be running)"),
+                    fix: Some("Close other webjitsu instances, or use BLADE_PROFILE_DIR pointing at an empty directory only you can write".into()),
                 }
             } else {
                 Check {
@@ -861,7 +861,7 @@ fn check_binary() -> Check {
             name: "Binary integrity",
             status: Status::Warn,
             detail: format!("{detail} unusual size"),
-            fix: Some("Reinstall: npm install -g bladebro".into()),
+            fix: Some("Reinstall: npm install -g webjitsu".into()),
         }
     }
 }

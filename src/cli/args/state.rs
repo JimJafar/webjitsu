@@ -11,7 +11,7 @@ pub(crate) fn parse_state_args(args: &[String]) -> Result<Value> {
         return Err(BladeError::Usage(
             "state needs an op — cookies, set-cookie, del-cookie, ls, ss, set-ls, set-ss, \
              rm-ls, rm-ss, clear-ls, clear-ss, tabs, open-tab, close-tab, switch-tab, save, \
-             load, compress, block (see 'bladebro help state')"
+             load, compress, block (see 'webjitsu help state')"
                 .into(),
         ));
     }
@@ -45,7 +45,7 @@ pub(crate) fn parse_state_args(args: &[String]) -> Result<Value> {
     };
     if !OPS.contains(&op) {
         return Err(BladeError::Usage(format!(
-            "unknown state op '{op}' — available: {} (see 'bladebro help state')",
+            "unknown state op '{op}' — available: {} (see 'webjitsu help state')",
             OPS.join(", ")
         )));
     }
@@ -80,7 +80,7 @@ pub(crate) fn parse_state_args(args: &[String]) -> Result<Value> {
                 "slim" => j["slim"] = json!(true),
                 _ => {
                     return Err(BladeError::Usage(format!(
-                        "unknown flag --{flag} for state — see 'bladebro help state'"
+                        "unknown flag --{flag} for state — see 'webjitsu help state'"
                     )))
                 }
             }

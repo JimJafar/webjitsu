@@ -206,11 +206,11 @@ pub(super) async fn warm_profile(page: &mut Page) {
     }
     if ok > 0 {
         eprintln!(
-            "[bladebro] profile warmed ({ok}/{} sites visited)",
+            "[webjitsu] profile warmed ({ok}/{} sites visited)",
             sites.len()
         );
     } else {
-        eprintln!("[bladebro] WARNING: profile warming failed (all sites unreachable)");
+        eprintln!("[webjitsu] WARNING: profile warming failed (all sites unreachable)");
         crate::session_profile::SessionProfile::release_warming();
     }
 }

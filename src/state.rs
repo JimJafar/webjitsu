@@ -101,7 +101,7 @@ pub struct Tab {
     #[serde(default)]
     pub title: String,
     /// True if a CDP session is attached (i.e. this is the tab
-    /// bladebro is currently driving).
+    /// webjitsu is currently driving).
     #[serde(default)]
     pub attached: bool,
 }
@@ -351,7 +351,7 @@ pub async fn perform(cdp: &CdpSession, op: &StateOp) -> Result<String> {
             // forward it to any driven page.
             if crate::realbrowser::real_lane() {
                 return Err(BladeError::Other(
-                    "state save is disabled on the real-browser lane — it would persist your real browser's cookies into bladebro's data dir".into(),
+                    "state save is disabled on the real-browser lane — it would persist your real browser's cookies into webjitsu's data dir".into(),
                 ));
             }
             validate_session_name(name)?;

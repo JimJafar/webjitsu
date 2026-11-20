@@ -36,10 +36,10 @@ impl Browser {
                     }
                     if attempt == 0 {
                         eprintln!(
-                            "[bladebro] sandboxed Chrome died at startup (root or restricted container?) — retrying with --no-sandbox"
+                            "[webjitsu] sandboxed Chrome died at startup (root or restricted container?) — retrying with --no-sandbox"
                         );
                     } else if attempt == 1 {
-                        eprintln!("[bladebro] Chrome died at startup, retrying");
+                        eprintln!("[webjitsu] Chrome died at startup, retrying");
                     }
                 }
             }
@@ -94,12 +94,12 @@ impl Browser {
                         let next = stages[i + 1];
                         if next == *stage {
                             eprintln!(
-                                "[bladebro] GL healthcheck: no WebGL context via {} — retrying it once (fresh launch)",
+                                "[webjitsu] GL healthcheck: no WebGL context via {} — retrying it once (fresh launch)",
                                 stage_label(*stage)
                             );
                         } else {
                             eprintln!(
-                                "[bladebro] GL healthcheck: no WebGL context via {} — escalating to {}",
+                                "[webjitsu] GL healthcheck: no WebGL context via {} — escalating to {}",
                                 stage_label(*stage),
                                 stage_label(next)
                             );
@@ -107,9 +107,9 @@ impl Browser {
                         last = Some((browser, client));
                     } else {
                         eprintln!(
-                            "[bladebro] WARNING: no WebGL context after the full GL ladder — \
+                            "[webjitsu] WARNING: no WebGL context after the full GL ladder — \
                              pages will see `getContext('webgl') === null` (stock Chrome on a \
-                             GL-less host behaves identically; no GL mask is applied). Run `bladebro audit`."
+                             GL-less host behaves identically; no GL mask is applied). Run `webjitsu audit`."
                         );
                         set_gpu_state(Some(GpuState::Missing));
                         return Ok((browser, client));
@@ -143,7 +143,7 @@ impl Browser {
             }
         };
         if let Some(spec) = &proxy {
-            eprintln!("[bladebro] using proxy: {}", spec.display);
+            eprintln!("[webjitsu] using proxy: {}", spec.display);
         }
         let chrome_path = find_chrome()?;
         let extra = super::compat::agent_extra_flags()?;
@@ -161,7 +161,7 @@ impl Browser {
         #[cfg(any(target_os = "linux", target_os = "android"))]
         if xvfb.is_none() {
             eprintln!(
-                "[bladebro] WARNING: Xvfb unavailable — falling back to headless mode (reduced stealth). Install xvfb for headful-on-virtual-display."
+                "[webjitsu] WARNING: Xvfb unavailable — falling back to headless mode (reduced stealth). Install xvfb for headful-on-virtual-display."
             );
         }
         #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -223,7 +223,7 @@ impl Browser {
         };
         #[cfg(not(any(target_os = "linux", target_os = "android")))]
         let mode_str = "headful";
-        eprintln!("[bladebro] launching Chrome from {chrome_path} on CDP pipe ({mode_str})");
+        eprintln!("[webjitsu] launching Chrome from {chrome_path} on CDP pipe ({mode_str})");
 
         let mut cmd = super::launch::browser_command(&chrome_path, &user_data_dir);
         browser_temp_env(&mut cmd);
@@ -277,7 +277,7 @@ impl Browser {
                         .get("product")
                         .and_then(|p| p.as_str())
                         .unwrap_or("unknown");
-                    eprintln!("[bladebro] Chrome ready: {product} (pipe transport)");
+                    eprintln!("[webjitsu] Chrome ready: {product} (pipe transport)");
                     super::compat::prepare_incognito(&client).await?;
                     let probe = probe_gl_pipe(&client).await;
                     let (child, profile) = guard.finish()?;

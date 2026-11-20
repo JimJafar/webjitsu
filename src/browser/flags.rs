@@ -312,7 +312,7 @@ pub(super) fn ordered_gl_stages(preferred: Option<GlStage>) -> Vec<GlStage> {
 /// Browser audio is MUTED by default (`--mute-audio`) on both the agent lane
 /// and owned real-browser launches so background media/YouTube playback never
 /// blasts unexpected sound with no pause button. Users opt in explicitly via
-/// `bladebro audio on` (persisted) or `BLADE_AUDIO=1` (per-process override).
+/// `webjitsu audio on` (persisted) or `BLADE_AUDIO=1` (per-process override).
 /// `--mute-audio` mutes at Chrome's OS audio sink without altering Blink/DOM
 /// media properties or WebAudio fingerprinting.
 pub fn audio_config_path() -> std::path::PathBuf {

@@ -10,7 +10,7 @@ use std::process::Stdio;
 use tokio::io::AsyncReadExt;
 
 const LIMIT: u64 = 256 * 1024;
-const SERVER: &str = "mcp_servers.bladebro";
+const SERVER: &str = "mcp_servers.webjitsu";
 const DISABLED: &str = "agent.disabled_toolsets";
 
 struct Hermes {
@@ -114,7 +114,7 @@ impl Hermes {
         };
         let (ok, _) = self.call(&args).await?;
         if !ok || self.get(key).await? != value.cloned() {
-            return Err(BladeError::Other(format!("Hermes did not persist {key}; recovery state retained — retry `bladebro hermes off`")));
+            return Err(BladeError::Other(format!("Hermes did not persist {key}; recovery state retained — retry `webjitsu hermes off`")));
         }
         Ok(())
     }
@@ -269,7 +269,7 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
             "on" | "off" | "status" if action.is_none() => action = Some(arg.as_str()),
             _ => {
                 return Err(BladeError::Usage(
-                    "bladebro hermes on|off|status [--profile <name>] [--hermes <path>] [--json]"
+                    "webjitsu hermes on|off|status [--profile <name>] [--hermes <path>] [--json]"
                         .into(),
                 ))
             }
@@ -286,7 +286,7 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
     let root = config
         .parent()
         .ok_or_else(|| BladeError::other("Hermes config has no parent"))?
-        .join(".bladebro-browser");
+        .join(".webjitsu-browser");
     let _lock = lock(&root)?;
     let state = root.join("state.json");
     check_file(&state)?;
@@ -321,7 +321,7 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
     if !servers.is_object() {
         return Err(BladeError::other("Hermes mcp_servers must be a mapping"));
     }
-    let current = servers.get("bladebro").cloned();
+    let current = servers.get("webjitsu").cloned();
     let (text, human_badge, human_rows) = match action {
         "status" => {
             let active = saved
@@ -329,7 +329,7 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
                 .is_some_and(|s| current.as_ref() == Some(&s.installed))
                 && has_browser(&names);
             let status_label = if active {
-                "Bladebro configured"
+                "WebJitsu configured"
             } else if saved.is_some() {
                 "setup pending or settings changed"
             } else {
@@ -359,14 +359,14 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
         "on" => {
             let s = if let Some(s) = saved {
                 if current != s.before && current.as_ref() != Some(&s.installed) {
-                    return Err(BladeError::other("mcp_servers.bladebro changed after setup; no settings changed. Restore the saved entry before retrying, or review .bladebro-browser/state.json"));
+                    return Err(BladeError::other("mcp_servers.webjitsu changed after setup; no settings changed. Restore the saved entry before retrying, or review .webjitsu-browser/state.json"));
                 }
                 s
             } else {
                 let exe = std::env::current_exe()?;
                 let exe = exe
                     .to_str()
-                    .ok_or_else(|| BladeError::other("Bladebro install path must be UTF-8"))?;
+                    .ok_or_else(|| BladeError::other("WebJitsu install path must be UTF-8"))?;
                 // Hermes filters the parent environment. Keep existing server
                 // options and explicit data/browser paths instead of silently
                 // launching against a different profile or Chromium install.
@@ -375,7 +375,7 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
                     Some(Value::Object(env)) => env.clone(),
                     _ => {
                         return Err(BladeError::other(
-                            "mcp_servers.bladebro.env must be a mapping; no settings changed",
+                            "mcp_servers.webjitsu.env must be a mapping; no settings changed",
                         ))
                     }
                 };
@@ -410,7 +410,7 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
                 // resume or restore only the settings it owns.
                 let encoded = serde_json::to_vec(&s)?;
                 if encoded.len() as u64 > LIMIT {
-                    return Err(BladeError::other("Hermes recovery state exceeds 256 KiB; no settings changed — reduce the existing Bladebro server environment before switching"));
+                    return Err(BladeError::other("Hermes recovery state exceeds 256 KiB; no settings changed — reduce the existing WebJitsu server environment before switching"));
                 }
                 platform::secure_write_file(&state, &encoded)?;
                 s
@@ -419,8 +419,8 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
                 hermes.write(SERVER, Some(&s.installed)).await?;
             }
             let spin = (!json_mode)
-                .then(|| crate::ui::Spinner::start("Verifying Hermes ↔ Bladebro MCP handshake..."));
-            let (connected, _) = hermes.call(&["mcp", "test", "bladebro"]).await?;
+                .then(|| crate::ui::Spinner::start("Verifying Hermes ↔ WebJitsu MCP handshake..."));
+            let (connected, _) = hermes.call(&["mcp", "test", "webjitsu"]).await?;
             if let Some(sp) = spin {
                 if connected {
                     sp.finish_ok("Hermes MCP handshake verified");
@@ -429,7 +429,7 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
                 }
             }
             if !connected {
-                return Err(BladeError::other("Hermes could not connect to Bladebro; built-in browser suppression was not changed. Run `hermes mcp test bladebro`, then retry `bladebro hermes on` or restore with `bladebro hermes off`"));
+                return Err(BladeError::other("Hermes could not connect to WebJitsu; built-in browser suppression was not changed. Run `hermes mcp test webjitsu`, then retry `webjitsu hermes on` or restore with `webjitsu hermes off`"));
             }
             if !has_browser(&names) {
                 names.push("browser".into());
@@ -438,26 +438,26 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
             let rows = vec![
                 (
                     "bridge",
-                    "Bladebro MCP registered · built-in browser suppressed".into(),
+                    "WebJitsu MCP registered · built-in browser suppressed".into(),
                 ),
                 ("web tools", "preserved untouched".into()),
                 ("config", config.display().to_string()),
                 (
                     "revert",
-                    "bladebro hermes off (use same --profile if named)".into(),
+                    "webjitsu hermes off (use same --profile if named)".into(),
                 ),
                 (
                     "next",
                     "Start a new Hermes chat; restart running gateways/desktop clients".into(),
                 ),
             ];
-            let plain = "Bladebro configured through Hermes MCP; built-in browser tools disabled, web tools preserved. Start a new chat; restart running gateways/desktop clients. Revert: bladebro hermes off (same profile). Chrome/Chromium must be installed; `bladebro doctor` checks browser prerequisites.".into();
+            let plain = "WebJitsu configured through Hermes MCP; built-in browser tools disabled, web tools preserved. Start a new chat; restart running gateways/desktop clients. Revert: webjitsu hermes off (same profile). Chrome/Chromium must be installed; `webjitsu doctor` checks browser prerequisites.".into();
             (plain, ("CONNECTED", crate::ui::Tone::Success), rows)
         }
         "off" => {
             if let Some(s) = saved {
                 if current != s.before && current.as_ref() != Some(&s.installed) {
-                    return Err(BladeError::other("mcp_servers.bladebro changed after setup; refusing to overwrite it. Review .bladebro-browser/state.json and restore the saved entry before retrying"));
+                    return Err(BladeError::other("mcp_servers.webjitsu changed after setup; refusing to overwrite it. Review .webjitsu-browser/state.json and restore the saved entry before retrying"));
                 }
                 // Restore the original browser policy before removing the MCP
                 // entry. Repeated off after a crash is safe at either boundary.
@@ -503,7 +503,7 @@ pub(super) async fn run(args: &[String], json_mode: bool) -> Result<()> {
             "Hermes Integration",
             human_badge,
             &human_rows,
-            Some("Run `bladebro doctor` to verify Chrome/Chromium prerequisites"),
+            Some("Run `webjitsu doctor` to verify Chrome/Chromium prerequisites"),
         );
     } else {
         println!("{text}");

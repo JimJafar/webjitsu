@@ -12,13 +12,13 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use bladebro::cdp::{CdpClient, CdpSession};
-use bladebro::page::dismiss_consent_with_stored;
 use futures_util::{SinkExt, StreamExt};
 use serde_json::{json, Value};
 use tokio::net::TcpListener;
 use tokio_tungstenite::accept_async;
 use tokio_tungstenite::tungstenite::Message;
+use webjitsu::cdp::{CdpClient, CdpSession};
+use webjitsu::page::dismiss_consent_with_stored;
 
 const ACCEPT: &str = "#onetrust-accept-btn-handler";
 const REJECT: &str = "#onetrust-reject-all-handler";
@@ -73,7 +73,7 @@ fn evaluate(ids: &[String], expr: &str) -> (Value, Eval) {
         serde_json::to_string(expr).unwrap()
     );
     let path = std::env::temp_dir().join(format!(
-        "bladebro-consent-page-{}-{}.js",
+        "webjitsu-consent-page-{}-{}.js",
         std::process::id(),
         N.fetch_add(1, Ordering::Relaxed)
     ));

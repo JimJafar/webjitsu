@@ -1,4 +1,4 @@
-//! CLI argument parsing — the `bladebro <cmd> ...` surface.
+//! CLI argument parsing — the `webjitsu <cmd> ...` surface.
 //!
 //! One parser per command (`nav` / `see` / `act` / `state` / `run` / `vision`)
 //! plus the shared `--host`/`--port` endpoint extraction. All of them are loud
@@ -117,7 +117,7 @@ fn resolve_payload(arg: &str) -> Result<String> {
             .map_err(|e| BladeError::Usage(format!("cannot read stdin: {e}")))?;
         if buf.trim().is_empty() {
             return Err(BladeError::Usage(
-                "stdin was empty — pipe the payload in, e.g. `cat steps.json | bladebro run -`"
+                "stdin was empty — pipe the payload in, e.g. `cat steps.json | webjitsu run -`"
                     .into(),
             ));
         }

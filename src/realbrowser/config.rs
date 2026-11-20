@@ -41,7 +41,7 @@ fn default_true() -> bool {
 /// Persisted real-browser configuration (`<data-dir>/realbrowser.json`).
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Config {
-    /// Master switch (`bladebro rb on|off`).
+    /// Master switch (`webjitsu rb on|off`).
     #[serde(default)]
     pub enabled: bool,
     /// Mechanism selection.

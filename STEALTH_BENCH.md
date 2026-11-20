@@ -12,7 +12,7 @@ Provider figures come from browser-use's published Stealth Bench V1 announcement
 
 | Provider | Pass rate |
 |---|---:|
-| **Bladebro (1 measured run, local)** | **85.0%** (68 / 80) |
+| **WebJitsu (1 measured run, local)** | **85.0%** (68 / 80) |
 | Browser Use Cloud | 81% |
 | Anchor | 77% |
 | Onkernel | 67% |
@@ -26,14 +26,14 @@ Provider figures come from browser-use's published Stealth Bench V1 announcement
 
 - Single residential IP — no proxy, mobile tier, or IP rotation.
 - No CAPTCHA-solving service or browser extension.
-- One persistent Bladebro profile — no per-site fingerprint swapping.
-- Default Bladebro stealth posture with zero benchmark-specific flags.
+- One persistent WebJitsu profile — no per-site fingerprint swapping.
+- Default WebJitsu stealth posture with zero benchmark-specific flags.
 
 ## Per-Vendor Breakdown
 
 Compared against browser-use-cloud's committed `official_results` run (`64 / 80`):
 
-| Vendor | Bladebro | browser-use-cloud |
+| Vendor | WebJitsu | browser-use-cloud |
 |---|---:|---:|
 | Cloudflare | 22 / 22 | 22 / 22 |
 | PerimeterX | 15 / 18 | 15 / 18 |

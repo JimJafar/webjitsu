@@ -1,6 +1,10 @@
-# Contributing to Bladebro
+# Contributing to WebJitsu
 
-Keep pull requests small and single-purpose. Coding agents should also read [AGENTS.md](AGENTS.md) and [tools/README.md](tools/README.md).
+Keep pull requests small and single-purpose.
+
+WebJitsu is a fork: [FORK.md](FORK.md) lists what it removes and why. A change that
+re-adds any `fork::` gate behaviour, or that makes `webjitsu rb` reachable again,
+is not a contribution to this repository. Coding agents should also read [AGENTS.md](AGENTS.md) and [tools/README.md](tools/README.md).
 
 ## Required Gate Before Opening a PR
 
@@ -16,7 +20,7 @@ Every bug fix requires a regression test in `src/` (`#[cfg(test)]`) or `tests/` 
 
 **Accepted:**
 - Bug fixes with regression coverage and readback-verified verdicts.
-- Stealth fixes proven with `bladebro audit` (zero `FAIL`), `python3 tools/diff_oracle/oracle.py` (`divergent: 0`), and before/after results on `bot.sannysoft.com`, `incolumitas.com`, and `abrahamjuliot.github.io/creepjs`.
+- Stealth fixes proven with `webjitsu audit` (zero `FAIL`), `python3 tools/diff_oracle/oracle.py` (`divergent: 0`), and before/after results on `bot.sannysoft.com`, `incolumitas.com`, and `abrahamjuliot.github.io/creepjs`.
 - Composable improvements to the existing 5 tools (`act`, `see`, `state`, `run`, `vision`), token-lean `extract=auto` site adapters (zero new tools or parameters, live-tested), performance wins with benchmarks, and Linux/macOS/Windows portability fixes.
 
 **Rejected:**

@@ -12,12 +12,12 @@ import sys
 from pathlib import Path
 
 PACKAGES = [
-    "bladebro",
-    "bladebro-linux-x64",
-    "bladebro-linux-arm64",
-    "bladebro-windows-x64",
-    "bladebro-darwin-x64",
-    "bladebro-darwin-arm64",
+    "webjitsu",
+    "webjitsu-linux-x64",
+    "webjitsu-linux-arm64",
+    "webjitsu-windows-x64",
+    "webjitsu-darwin-x64",
+    "webjitsu-darwin-arm64",
 ]
 
 
